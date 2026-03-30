@@ -934,7 +934,7 @@ async function analyseLearnEntry(entry){
   var sys = 'You are an expert ICT 2022 NQ futures analyst reviewing an annotated trade screenshot. Read every label, arrow, and marking on the chart carefully. Extract: direction (long/short/unknown), outcome (win/loss/unknown), all ICT concepts marked (MSS, CHoCH, FVG, OB, liquidity sweep, SSL, BSL, SMT, BISI, SIBI, OTE, PD array, entry, etc). Write a concise note explaining what the setup shows from an ICT perspective. Return ONLY this JSON: {"direction":"long","outcome":"win","concepts":["MSS","FVG","Liquidity Sweep"],"note":"one sentence ICT analysis of the annotated setup"}';
   try{
     var resp = await neoFetch([{role:'user',content:[
-      {type:'image',source:{type:'base64',media_type:'image/jpeg',data:entry.b64.split(',')[1]}},
+      {type:'image',source:{type:'base64',media_type:(entry.b64.match(/data:([^;]+)/)||['','image/jpeg'])[1],data:entry.b64.split(',')[1]}},
       {type:'text',text:'Extract all trade annotation data from this screenshot.'}
         ]}], sys, 400, MODEL_LIVE);
     var d = extractJSON(resp);
