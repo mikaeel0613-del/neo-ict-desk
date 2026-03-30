@@ -1020,7 +1020,7 @@ async function askNeo(){
     el.innerHTML='<div class="msg-meta">NEO · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</div>'
       +'<div class="bubble-ai"><div class="bubble-text" style="font-size:13px;line-height:1.6">'+escH(text)+'</div></div>';
     scroll.appendChild(el); scroll.scrollTop=scroll.scrollHeight;
-    neoSpeak(text.slice(0,200));
+    neoSpeak(text);
   }catch(err){
     removeLoading(loadId); addErrorBubble(err.message); convHistory.pop();
   }
@@ -1698,8 +1698,7 @@ CRITICAL: Output ONLY a raw JSON object. No backticks. No code fences. No markdo
     renderResponse(dirEmoji + ' ' + dirLabel, data, frame);
     const statusTxt = data.verdict + ' · ' + data.confidence_pct + '% · ' + (data.rr||'');
     setHkStatus(statusTxt, direction==='long' ? 'done-long' : 'done-short');
-    const warn = (data.warnings||[]).length ? '. Warning: ' + data.warnings[0].text : '';
-    neoSpeak(data.verdict + '. Confidence ' + data.confidence_pct + ' percent.' + warn);
+    speakVerdict(data.verdict, data.confidence_pct, data.warnings, data.reasoning, data.rr);
     if(data.verdict_class==='take'){
       openInTrade({direction, entry:data.suggested_entry, sl:data.suggested_sl, tp:data.suggested_tp, rr:data.rr});
     }
@@ -2373,7 +2372,7 @@ function renderResponse(transcript,d,frame){
     </div></div>`;
   scroll.appendChild(wrap);
   scroll.scrollTop=scroll.scrollHeight;
-  speakVerdict(d.verdict,d.confidence_pct,d.warnings);
+  speakVerdict(d.verdict,d.confidence_pct,d.warnings,d.reasoning,d.rr);
   if(d.verdict_class==='take'){
     openInTrade({
       direction: transcript.toLowerCase().includes('short')?'short':'long',
@@ -2385,11 +2384,13 @@ function renderResponse(transcript,d,frame){
   }
 }
 
-function speakVerdict(verdict,pct,warnings){
-  // Convert uppercase verdict to natural speech
+function speakVerdict(verdict,pct,warnings,reasoning,rr){
+  // Convert uppercase verdict to natural speech — speak the full analysis
   const v = verdict==='TAKE IT'?'Take it' : verdict==='SKIP IT'?'Skip it' : 'Wait';
-  const w = (warnings||[]).length ? ' Warning: '+warnings[0].text : '';
-  neoSpeak(v + '. Confidence ' + pct + ' percent.' + w);
+  const w = (warnings||[]).length ? ' Warning: '+warnings[0].text+'.' : '';
+  const r = reasoning ? ' '+reasoning : '';
+  const rrText = rr ? ' Risk reward '+rr.replace(':','to')+'.': '';
+  neoSpeak(v + '. Confidence ' + pct + ' percent.' + w + rrText + r);
 }
 
 // ── Voice engine ────────────────────────────────────────────────────────
@@ -2400,16 +2401,18 @@ function getBestVoice(){
   if(_bestVoice) return _bestVoice;
   const voices = speechSynthesis.getVoices();
   if(!voices.length) return null;
-  // Priority: Google UK English Female > Google US English > Microsoft Natural voices > any English
+  // Priority: Male voices first — NEO is male
   const priority = [
-    v => v.name.includes('Google UK English Female'),
     v => v.name.includes('Google UK English Male'),
+    v => v.name.includes('Daniel'),          // UK male — deep, clear
+    v => v.name.includes('Microsoft Ryan'),  // natural UK male
+    v => v.name.includes('Microsoft Guy'),
+    v => v.name.includes('Microsoft David'),
+    v => v.name.includes('Google US English') && v.name.toLowerCase().includes('male'),
+    v => v.name.includes('Alex'),            // macOS male
+    v => v.name.includes('Fred'),
+    v => v.name.includes('Microsoft') && v.name.includes('Natural') && v.lang.startsWith('en'),
     v => v.name.includes('Google US English'),
-    v => v.name.includes('Microsoft') && v.name.includes('Natural'),
-    v => v.name.includes('Microsoft') && v.lang.startsWith('en'),
-    v => v.name.includes('Samantha'),
-    v => v.name.includes('Daniel'),
-    v => v.name.includes('Karen'),
     v => v.lang.startsWith('en-GB'),
     v => v.lang.startsWith('en-US'),
     v => v.lang.startsWith('en'),
@@ -2443,6 +2446,10 @@ function naturalise(text){
     .replace(/\bTP\b/g,         'take profit')
     .replace(/([0-9]+):([0-9]+)/g, '$1 to $2')  // 4:1 -> "4 to 1"
     .replace(/%/g, ' percent')
+    .replace(/\*/g, '')
+    .replace(/#/g, '')
+    .replace(/`/g, '')
+    .replace(/\[|\]/g, '')
     .replace(/\s+/g, ' ').trim();
 }
 
@@ -2454,7 +2461,7 @@ function neoSpeak(text){
     // Use best available voice
     const voice = getBestVoice();
     if(voice) u.voice = voice;
-    u.rate   = 1.05;  // slightly faster than default, still clear
+    u.rate   = 1.0;   // natural pace for longer speech
     u.pitch  = 1.0;
     u.volume = 1;
     u.onerror = ()=>{};
