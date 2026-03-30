@@ -1,0 +1,3167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>NEO — NQ ICT AI Desk</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07090c;--s1:#0c0f14;--s2:#111620;--s3:#161d28;
+  --b1:#1a2335;--b2:#233047;--b3:#2d3d55;
+  --tx:#dde4f0;--tx2:#8899b4;--tx3:#4a5a72;
+  --green:#16c784;--gd:rgba(22,199,132,.1);--gb:rgba(22,199,132,.22);
+  --red:#ea3943;--rd:rgba(234,57,67,.1);--rb:rgba(234,57,67,.22);
+  --amber:#f0a500;--ad:rgba(240,165,0,.1);--ab:rgba(240,165,0,.25);
+  --blue:#4d8bf5;--bd:rgba(77,139,245,.1);--bb:rgba(77,139,245,.25);
+  --purple:#a78bfa;--purd:rgba(167,139,250,.1);--purb:rgba(167,139,250,.25);
+  --font:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;--r:8px;--r2:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px;overflow:hidden;-webkit-font-smoothing:antialiased}
+
+/* ── TABS ── */
+.tabs{display:flex;border-bottom:1px solid var(--b1);background:var(--s1);padding:0 16px;height:46px;align-items:flex-end;gap:2px;flex-shrink:0}
+.tab{padding:8px 16px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;border-radius:4px 4px 0 0;user-select:none}
+.tab:hover{color:var(--tx2)}
+.tab.active{color:var(--tx);border-bottom-color:var(--blue)}
+.setup-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
+.setup-screen.hidden{display:none}
+.setup-box{background:var(--s1);border:1px solid var(--b2);border-radius:var(--r2);padding:32px;width:100%;max-width:460px}
+.setup-logo{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.setup-logo-mark{width:40px;height:40px;background:var(--blue);border-radius:10px;display:grid;place-items:center;flex-shrink:0}
+.setup-logo-mark svg{width:20px;height:20px}
+.setup-logo-name{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--tx)}
+.setup-logo-sub{font-size:11px;color:var(--tx3);font-family:var(--mono)}
+.setup-title{font-size:15px;font-weight:500;color:var(--tx);margin-bottom:6px}
+.setup-desc{font-size:12px;color:var(--tx2);line-height:1.7;margin-bottom:20px}
+.setup-desc a{color:var(--blue);text-decoration:none}
+.setup-input-wrap label{display:block;font-family:var(--mono);font-size:10px;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.setup-input{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);color:var(--tx);font-family:var(--mono);font-size:12px;padding:10px 12px;outline:none;transition:border .15s;margin-bottom:5px}
+.setup-input:focus{border-color:var(--blue)}
+.setup-hint{font-size:11px;color:var(--tx3);margin-bottom:16px}
+.setup-btn{width:100%;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-family:var(--mono);font-size:12px;font-weight:500;cursor:pointer;transition:opacity .15s;letter-spacing:.04em;margin-top:4px}
+.setup-btn:hover{opacity:.85}
+.setup-btn:disabled{opacity:.4;cursor:not-allowed}
+.setup-error{font-size:11px;color:var(--red);margin-top:8px;display:none;font-family:var(--mono)}
+.setup-footer{margin-top:16px;font-size:11px;color:var(--tx3);text-align:center;line-height:1.6}
+.settings-btn{font-family:var(--mono);font-size:13px;padding:3px 7px;border-radius:5px;background:var(--s2);border:1px solid var(--b2);color:var(--tx3);cursor:pointer;transition:all .15s;line-height:1}
+.settings-btn:hover{border-color:var(--blue);color:var(--blue)}
+
+/* ── PRICE TICKER ── */
+.price-ticker{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--b2);background:var(--s2);cursor:default}
+.ticker-price{font-size:13px;font-weight:600;color:var(--tx)}
+.ticker-change{font-size:10px}
+.ticker-change.up{color:var(--green)}.ticker-change.down{color:var(--red)}
+.ticker-label{font-size:10px;color:var(--tx3)}
+/* ── RISK CALCULATOR ── */
+.risk-bar-strip{display:none;flex-shrink:0;align-items:center;gap:10px;padding:7px 16px;background:rgba(77,139,245,.06);border-top:1px solid rgba(77,139,245,.18);font-size:12px}
+.risk-bar-strip.show{display:flex}
+.risk-field{display:flex;align-items:center;gap:6px}
+.risk-field label{font-family:var(--mono);font-size:10px;color:var(--tx3);white-space:nowrap}
+.risk-input{width:76px;background:var(--s2);border:1px solid var(--b2);border-radius:5px;color:var(--tx);font-family:var(--mono);font-size:12px;padding:4px 7px;outline:none;transition:border .15s}
+.risk-input:focus{border-color:var(--blue)}
+.risk-divider{width:1px;height:16px;background:var(--b2);flex-shrink:0}
+.risk-result{display:flex;align-items:center;gap:12px;margin-left:4px}
+.risk-chip{font-family:var(--mono);font-size:11px;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.risk-chip.nq{background:var(--bd);border:1px solid var(--bb);color:var(--blue)}
+.risk-chip.mnq{background:var(--purd);border:1px solid var(--purb);color:var(--purple)}
+.risk-chip.dollar{background:var(--gd);border:1px solid var(--gb);color:var(--green)}
+.risk-calc-btn{font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;background:var(--s2);border:1px solid var(--b2);color:var(--tx2);cursor:pointer;transition:all .15s}
+.risk-calc-btn:hover{border-color:var(--blue);color:var(--blue)}
+.risk-toggle-btn{font-family:var(--mono);font-size:10px;padding:4px 9px;border-radius:20px;background:var(--s2);border:1px solid var(--b2);color:var(--tx3);cursor:pointer;transition:all .15s;white-space:nowrap}
+.risk-toggle-btn:hover{border-color:var(--blue);color:var(--blue)}
+/* ── KILL ZONE TIMER ── */
+.kz-timer{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.kz-timer.active{border:1px solid var(--gb);color:var(--green);background:var(--gd)}
+.kz-timer.pre{border:1px solid var(--ab);color:var(--amber);background:var(--ad)}
+.kz-timer.closed{border:1px solid var(--b2);color:var(--tx3);background:var(--s2)}
+.kz-timer.warning{border:1px solid var(--rb);color:var(--red);background:var(--rd)}
+/* ── BRIEFING / DEBRIEF / REPLAY panels ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--s1);border:1px solid var(--b2);border-radius:var(--r2);width:100%;max-width:680px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--b1);flex-shrink:0}
+.modal-title{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--tx);letter-spacing:.06em}
+.modal-close{width:28px;height:28px;border-radius:6px;border:1px solid var(--b1);background:var(--s2);color:var(--tx3);cursor:pointer;display:grid;place-items:center;font-size:14px;transition:all .15s}
+.modal-close:hover{border-color:var(--red);color:var(--red)}
+.modal-body{flex:1;overflow-y:auto;padding:16px 18px}
+.modal-body::-webkit-scrollbar{width:3px}
+.modal-body::-webkit-scrollbar-thumb{background:var(--b2)}
+.modal-footer{padding:12px 18px;border-top:1px solid var(--b1);display:flex;gap:8px;flex-shrink:0}
+.modal-btn{padding:9px 18px;border-radius:var(--r);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;letter-spacing:.04em}
+.modal-btn.primary{background:var(--blue);color:#fff;border:none}
+.modal-btn.primary:hover{opacity:.85}
+.modal-btn.secondary{background:var(--s2);border:1px solid var(--b2);color:var(--tx2)}
+.modal-btn.secondary:hover{border-color:var(--blue);color:var(--blue)}
+.modal-btn:disabled{opacity:.4;cursor:not-allowed}
+/* briefing sections */
+.brief-section{margin-bottom:14px}
+.brief-section-title{font-family:var(--mono);font-size:9px;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.brief-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--b1);font-size:12px}
+.brief-row:last-child{border-bottom:none}
+.brief-key{color:var(--tx2)}
+.brief-val{font-family:var(--mono);font-size:11px;color:var(--tx)}
+.brief-val.bull{color:var(--green)}.brief-val.bear{color:var(--red)}
+.brief-bias-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-family:var(--mono);font-size:12px;font-weight:500}
+.brief-bias-chip.bull{background:var(--gd);border:1px solid var(--gb);color:var(--green)}
+.brief-bias-chip.bear{background:var(--rd);border:1px solid var(--rb);color:var(--red)}
+.brief-level{display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--s2);border:1px solid var(--b1);border-radius:5px;margin-bottom:4px;font-size:12px}
+.brief-level-label{font-family:var(--mono);font-size:10px;color:var(--tx3);width:100px;flex-shrink:0}
+.brief-level-price{font-family:var(--mono);font-size:12px;color:var(--tx)}
+.brief-level-note{font-size:11px;color:var(--tx2);margin-left:auto}
+/* replay */
+.replay-steps{display:flex;flex-direction:column;gap:8px}
+.replay-step{padding:10px 12px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);font-size:12px;animation:mfade .2s ease}
+.replay-step-header{font-family:var(--mono);font-size:10px;color:var(--tx3);letter-spacing:.06em;margin-bottom:4px}
+.replay-step-text{color:var(--tx2);line-height:1.6}
+.replay-step.entry .replay-step-header{color:var(--blue)}
+.replay-step.management .replay-step-header{color:var(--amber)}
+.replay-step.exit .replay-step-header{color:var(--green)}
+.replay-step.mistake .replay-step-header{color:var(--red)}
+/* debrief */
+.debrief-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.debrief-stat{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:10px;text-align:center}
+.debrief-stat-val{font-family:var(--mono);font-size:18px;font-weight:600;margin-bottom:3px}
+.debrief-stat-lbl{font-family:var(--mono);font-size:9px;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase}
+/* toolbar buttons */
+.toolbar-btn{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:5px;background:var(--s2);border:1px solid var(--b2);color:var(--tx3);cursor:pointer;transition:all .15s;white-space:nowrap}
+.toolbar-btn:hover{border-color:var(--blue);color:var(--blue)}
+.toolbar-btn.pulse-green{border-color:var(--gb);color:var(--green);animation:blink 2s infinite}
+
+.tab-brand{margin-right:auto;display:flex;align-items:center;gap:8px;padding-bottom:8px}
+.tab-brand-mark{width:24px;height:24px;background:var(--blue);border-radius:5px;display:grid;place-items:center}
+.tab-brand-mark svg{width:12px;height:12px}
+.tab-brand-name{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--tx2)}
+.topright{margin-left:auto;display:flex;align-items:center;gap:10px;padding-bottom:8px}
+.session-badge{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:20px;border:1px solid var(--gb);color:var(--green);background:var(--gd)}
+.sdot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ── PAGES ── */
+.page{display:none;flex:1;overflow:hidden;flex-direction:column}
+.page.active{display:flex}
+
+/* ════════ LIVE DESK ════════ */
+.live-shell{display:grid;grid-template-columns:1fr 360px;grid-template-rows:1fr 90px 52px;height:calc(100vh - 46px)}
+.screen-area{grid-row:1;background:#04060a;border-right:1px solid var(--b1);border-bottom:1px solid var(--b1);position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+video#sv{width:100%;height:100%;object-fit:contain;opacity:.92}
+.scan-anim{position:absolute;inset:0;border:1px solid rgba(77,139,245,.0);pointer-events:none;transition:border-color .2s}
+.scan-anim.flash{border-color:rgba(77,139,245,.5)}
+.live-badge{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:10px;color:var(--green);background:rgba(0,0,0,.7);border:1px solid var(--gb);padding:3px 8px;border-radius:4px;display:none}
+.screen-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--tx3);text-align:center;cursor:pointer;padding:40px;transition:color .2s}
+.screen-empty:hover{color:var(--tx2)}
+.screen-empty svg{opacity:.25;margin-bottom:4px}
+.screen-empty p{font-size:12px;line-height:1.7;max-width:220px}
+.screen-empty span{font-family:var(--mono);font-size:10px;background:var(--s2);border:1px solid var(--b1);padding:2px 8px;border-radius:4px;color:var(--tx3)}
+.resp-area{grid-row:1;display:flex;flex-direction:column;overflow:hidden;background:var(--s1);border-bottom:1px solid var(--b1)}
+.resp-scroll{flex:1;overflow-y:auto;padding:14px 14px 8px;scroll-behavior:smooth}
+.resp-scroll::-webkit-scrollbar{width:3px}
+.resp-scroll::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+.resp-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--tx3);text-align:center;padding:20px;font-size:12px;line-height:1.8}
+.resp-empty kbd{font-family:var(--mono);font-size:10px;background:var(--s2);border:1px solid var(--b2);border-radius:4px;padding:1px 7px;color:var(--tx2)}
+.voice-bar{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:160px 1fr 160px;align-items:center;border-top:1px solid var(--b1);background:var(--s1)}
+.vb-left{padding:0 20px;display:flex;flex-direction:column;gap:8px;border-right:1px solid var(--b1);height:100%;justify-content:center}
+.vb-center{padding:0 20px;display:flex;flex-direction:column;gap:6px;justify-content:center}
+.vb-right{padding:0 20px;display:flex;flex-direction:column;gap:8px;border-left:1px solid var(--b1);height:100%;justify-content:center}
+.mic-wrap{display:flex;align-items:center;gap:12px}
+.mic-btn{width:52px;height:52px;border-radius:50%;border:1.5px solid var(--b2);background:var(--s2);display:grid;place-items:center;cursor:pointer;transition:all .2s;position:relative;flex-shrink:0}
+.mic-btn:hover{border-color:var(--blue)}
+.mic-btn.on{border-color:var(--blue);background:var(--bd);animation:mring 1.2s infinite}
+.mic-btn.thinking{border-color:var(--amber);background:var(--ad)}
+@keyframes mring{0%,100%{box-shadow:0 0 0 0 rgba(77,139,245,.35)}60%{box-shadow:0 0 0 10px rgba(77,139,245,0)}}
+.mic-btn svg{width:18px;height:18px}
+.mic-label{font-family:var(--mono);font-size:10px;color:var(--tx3)}
+.mic-status{font-size:11px;color:var(--tx2);font-family:var(--mono)}
+.trans-label{font-family:var(--mono);font-size:10px;color:var(--tx3);letter-spacing:.06em}
+.trans-text{font-size:13px;color:var(--tx);min-height:22px;line-height:1.5}
+.trans-text.ph{color:var(--tx3);font-style:italic}
+.wave{display:flex;align-items:center;gap:2px;height:16px;opacity:0;transition:opacity .2s}
+.wave.on{opacity:1}
+.wave i{width:3px;border-radius:2px;background:var(--blue);animation:wv .7s ease infinite;display:block}
+.wave i:nth-child(1){height:5px;animation-delay:0s}.wave i:nth-child(2){height:10px;animation-delay:.1s}.wave i:nth-child(3){height:15px;animation-delay:.2s}.wave i:nth-child(4){height:10px;animation-delay:.3s}.wave i:nth-child(5){height:5px;animation-delay:.4s}
+@keyframes wv{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+.btn-share{width:100%;padding:8px;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);font-family:var(--mono);font-size:10px;color:var(--tx2);cursor:pointer;transition:all .15s;letter-spacing:.04em}
+.btn-share:hover{border-color:var(--blue);color:var(--blue)}
+.btn-clear-chat{width:100%;padding:6px;background:transparent;border:1px solid var(--b1);border-radius:var(--r);font-family:var(--mono);font-size:10px;color:var(--tx3);cursor:pointer;transition:all .15s}
+.btn-clear-chat:hover{border-color:var(--b2);color:var(--tx2)}
+.hotkey-bar{grid-column:1/-1;grid-row:2;display:flex;align-items:center;gap:0;border-top:1px solid var(--b1);background:var(--s1);padding:0 20px;height:90px}
+.hk-section{display:flex;gap:10px;flex-shrink:0}
+.hk-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:120px;height:66px;border-radius:var(--r2);border:2px solid;cursor:pointer;transition:all .15s;position:relative;font-family:var(--mono);background:transparent}
+.hk-long{border-color:var(--green);background:var(--gd)}
+.hk-long:hover,.hk-long:focus{background:rgba(22,199,132,.22);transform:scale(1.03);outline:none}
+.hk-long:active{transform:scale(.97)}
+.hk-short{border-color:var(--red);background:var(--rd)}
+.hk-short:hover,.hk-short:focus{background:rgba(234,57,67,.22);transform:scale(1.03);outline:none}
+.hk-short:active{transform:scale(.97)}
+.hk-long.firing{background:rgba(22,199,132,.4);box-shadow:0 0 24px rgba(22,199,132,.5)}
+.hk-short.firing{background:rgba(234,57,67,.4);box-shadow:0 0 24px rgba(234,57,67,.5)}
+.hk-long.busy,.hk-short.busy{opacity:.5;cursor:not-allowed}
+.hk-arrow{font-size:22px;font-weight:700;line-height:1}
+.hk-long .hk-arrow{color:var(--green)}
+.hk-short .hk-arrow{color:var(--red)}
+.hk-label{font-size:11px;font-weight:600;letter-spacing:.1em}
+.hk-long .hk-label{color:var(--green)}
+.hk-short .hk-label{color:var(--red)}
+.hk-key{position:absolute;top:5px;right:7px;font-size:9px;color:var(--tx3);background:var(--s1);border:1px solid var(--b2);border-radius:3px;padding:1px 5px}
+.hk-divider{width:1px;height:50px;background:var(--b1);margin:0 20px;flex-shrink:0}
+.hk-status-section{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+.hk-status-label{font-family:var(--mono);font-size:9px;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase}
+.hk-status{font-size:13px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .2s;font-family:var(--mono);font-weight:500}
+.hk-status.thinking{color:var(--amber)}
+.hk-status.done-long{color:var(--green)}
+.hk-status.done-short{color:var(--red)}
+.hk-status.error{color:var(--red)}
+.hk-right{display:flex;flex-direction:column;gap:7px;flex-shrink:0;margin-left:auto}
+/* ── HOTKEY SETTINGS ── */
+.hk-settings-btn{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:5px;background:var(--s2);border:1px solid var(--b2);color:var(--tx3);cursor:pointer;transition:all .15s;white-space:nowrap;align-self:center}
+.hk-settings-btn:hover{border-color:var(--blue);color:var(--blue)}
+.hk-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center}
+.hk-modal.open{display:flex}
+.hk-modal-box{background:var(--s1);border:1px solid var(--b2);border-radius:var(--r2);padding:24px;width:340px}
+.hk-modal-title{font-family:var(--mono);font-size:12px;color:var(--tx);margin-bottom:16px;font-weight:500;letter-spacing:.06em}
+.hk-modal-row{display:grid;grid-template-columns:80px 1fr;align-items:center;gap:10px;margin-bottom:12px}
+.hk-modal-label{font-family:var(--mono);font-size:11px;color:var(--tx2)}
+.hk-capture-btn{width:100%;padding:8px;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);font-family:var(--mono);font-size:12px;color:var(--tx);cursor:pointer;transition:all .15s;text-align:center}
+.hk-capture-btn:hover{border-color:var(--blue)}
+.hk-capture-btn.waiting{border-color:var(--amber);color:var(--amber);animation:blink .8s infinite}
+.hk-modal-footer{display:flex;gap:8px;margin-top:16px}
+.hk-save-btn{flex:1;padding:9px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-family:var(--mono);font-size:11px;cursor:pointer;transition:opacity .15s}
+.hk-save-btn:hover{opacity:.85}
+.hk-cancel-btn{padding:9px 14px;background:transparent;border:1px solid var(--b2);border-radius:var(--r);font-family:var(--mono);font-size:11px;color:var(--tx3);cursor:pointer;transition:all .15s}
+.hk-cancel-btn:hover{border-color:var(--b3);color:var(--tx2)}
+.hk-hint{font-family:var(--mono);font-size:10px;color:var(--tx3);margin-top:10px;line-height:1.5}
+
+
+.mic-btn.toggled-on{border-color:var(--blue);background:var(--bd);box-shadow:0 0 0 3px rgba(77,139,245,.2)}
+.intrade-bar{display:none;flex-shrink:0;align-items:center;gap:8px;padding:8px 14px;background:rgba(22,199,132,.06);border-top:1px solid rgba(22,199,132,.2);font-size:12px}
+.intrade-bar.active{display:flex}
+.intrade-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite;flex-shrink:0}
+.intrade-label{font-family:var(--mono);font-size:11px;color:var(--green);white-space:nowrap;font-weight:500}
+.intrade-entry{font-family:var(--mono);font-size:10px;color:var(--tx2)}
+.intrade-divider{width:1px;height:14px;background:var(--b2);flex-shrink:0}
+.intrade-actions{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap}
+.intrade-btn{font-family:var(--mono);font-size:10px;padding:4px 9px;border-radius:20px;border:1px solid var(--b2);background:var(--s2);color:var(--tx2);cursor:pointer;transition:all .15s;white-space:nowrap}
+.intrade-btn:hover{border-color:var(--blue);color:var(--blue)}
+.intrade-btn.close-trade{border-color:var(--rb);color:var(--red)}
+.intrade-btn.close-trade:hover{background:var(--rd)}
+.msg{margin-bottom:12px;animation:mfade .2s ease}
+@keyframes mfade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+.msg-meta{font-family:var(--mono);font-size:10px;color:var(--tx3);margin-bottom:4px;letter-spacing:.05em}
+.bubble-you{background:var(--bd);border:1px solid var(--bb);border-radius:var(--r2);padding:10px 12px;font-size:12px;color:var(--tx2);line-height:1.5;font-family:var(--mono)}
+.bubble-ai{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:13px 15px;font-size:13px;line-height:1.65}
+.verdict{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:20px;font-family:var(--mono);font-size:12px;font-weight:500;margin-bottom:10px;width:fit-content}
+.verdict.take{background:var(--gd);border:1px solid var(--gb);color:var(--green)}
+.verdict.skip{background:var(--rd);border:1px solid var(--rb);color:var(--red)}
+.verdict.wait{background:var(--ad);border:1px solid var(--ab);color:var(--amber)}
+.conf-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px}
+.ci{display:flex;align-items:center;gap:7px;background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:6px 8px;font-size:11px}
+.cdot2{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.cdot2.yes{background:var(--green)}.cdot2.no{background:var(--b2)}.cdot2.partial{background:var(--amber)}
+.ci-name{color:var(--tx2);flex:1;font-size:11px}
+.ci-val{font-family:var(--mono);font-size:10px}
+.ci-val.yes{color:var(--green)}.ci-val.no{color:var(--tx3)}.ci-val.partial{color:var(--amber)}
+.srow{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sbar{flex:1;height:4px;background:var(--b1);border-radius:2px;overflow:hidden}
+.sfill{height:100%;border-radius:2px;transition:width .5s}
+.snum{font-family:var(--mono);font-size:12px;font-weight:500}
+.slbl{font-family:var(--mono);font-size:10px;color:var(--tx3);white-space:nowrap}
+.conf-score-big{display:flex;align-items:baseline;gap:4px;margin-bottom:10px}
+.conf-pct{font-family:var(--mono);font-size:26px;font-weight:600}
+.conf-pct.high{color:var(--green)}.conf-pct.med{color:var(--amber)}.conf-pct.low{color:var(--red)}
+.conf-pct-label{font-family:var(--mono);font-size:11px;color:var(--tx3)}
+.warning-list{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.warn-item{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;line-height:1.4}
+.warn-item.pattern{background:var(--rd);border:1px solid var(--rb)}
+.warn-item.pd{background:var(--ad);border:1px solid var(--ab)}
+.warn-item.info{background:var(--bd);border:1px solid var(--bb)}
+.warn-item.learn{background:var(--purd);border:1px solid var(--purb)}
+.warn-icon{font-size:13px;flex-shrink:0;margin-top:1px}
+.warn-text{color:var(--tx2)}
+.warn-text strong{color:var(--tx);font-weight:500}
+.levels-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.lcard{background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:7px 9px}
+.lcard-lbl{font-family:var(--mono);font-size:9px;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.lcard-val{font-family:var(--mono);font-size:13px;font-weight:500}
+.lcard.e .lcard-val{color:var(--blue)}.lcard.s .lcard-val{color:var(--red)}.lcard.t .lcard-val{color:var(--green)}
+.ai-text{font-size:13px;color:var(--tx2);line-height:1.7}
+.ai-text strong{color:var(--tx);font-weight:500}
+.risk-bar{margin-top:10px;padding:8px 10px;background:var(--s1);border-left:2px solid var(--amber);border-radius:0 6px 6px 0;font-size:12px;color:var(--amber);line-height:1.5}
+.loading-bubble{display:flex;gap:5px;padding:6px 0}
+.loading-bubble span{width:6px;height:6px;border-radius:50%;background:var(--blue);animation:ldot 1.1s infinite}
+.loading-bubble span:nth-child(2){animation-delay:.18s}
+.loading-bubble span:nth-child(3){animation-delay:.36s}
+@keyframes ldot{0%,80%,100%{opacity:.2;transform:scale(.7)}40%{opacity:1;transform:scale(1)}}
+.st{font-family:var(--mono);font-size:9px;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+
+/* ════════ LEARNING MODULE ════════ */
+.learn-shell{display:grid;grid-template-columns:1fr 400px;height:calc(100vh - 46px);overflow:hidden}
+.learn-left{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--b1)}
+.learn-right{display:flex;flex-direction:column;overflow:hidden;background:var(--s1)}
+
+/* upload zone */
+.upload-zone{flex-shrink:0;padding:16px;border-bottom:1px solid var(--b1)}
+.upload-zone-title{font-family:var(--mono);font-size:10px;color:var(--tx3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.learn-stats{display:flex;gap:10px}
+.ls{font-family:var(--mono);font-size:10px;color:var(--tx3)}
+.ls span{font-weight:500}
+.ls span.g{color:var(--green)}.ls span.r{color:var(--red)}.ls span.p{color:var(--purple)}
+
+/* drop area */
+.drop-area{border:1.5px dashed var(--b2);border-radius:var(--r2);padding:24px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:var(--s2)}
+.drop-area:hover,.drop-area.drag{border-color:var(--purple);background:var(--purd)}
+.drop-area input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+.drop-icon{font-size:28px;margin-bottom:8px;opacity:.5}
+.drop-title{font-size:13px;color:var(--tx2);margin-bottom:4px}
+.drop-sub{font-size:11px;color:var(--tx3)}
+.drop-sub span{font-family:var(--mono);background:var(--s1);border:1px solid var(--b1);padding:1px 7px;border-radius:4px;color:var(--tx2)}
+
+/* upload queue */
+.queue-scroll{flex:1;overflow-y:auto;padding:14px}
+.queue-scroll::-webkit-scrollbar{width:3px}
+.queue-scroll::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+.queue-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--tx3);font-size:12px;text-align:center;line-height:1.7}
+
+/* upload card */
+.ucard{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:12px;margin-bottom:10px;transition:border-color .15s;animation:mfade .2s ease}
+.ucard.selected{border-color:var(--purple)}
+.ucard.analysed{border-color:var(--b2)}
+.ucard-top{display:flex;gap:10px;margin-bottom:10px}
+.ucard-img{width:90px;height:60px;border-radius:6px;object-fit:cover;border:1px solid var(--b1);cursor:pointer;flex-shrink:0}
+.ucard-fields{flex:1;display:flex;flex-direction:column;gap:6px}
+.ucard-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ucard-field label{display:block;font-family:var(--mono);font-size:9px;color:var(--tx3);letter-spacing:.05em;margin-bottom:3px}
+.ucard-field input,.ucard-field select{width:100%;background:var(--s1);border:1px solid var(--b1);border-radius:5px;color:var(--tx);font-family:var(--mono);font-size:11px;padding:5px 7px;outline:none;transition:border .15s}
+.ucard-field input:focus,.ucard-field select:focus{border-color:var(--purple)}
+.ucard-field select option{background:var(--s1)}
+.ucard-textarea{width:100%;background:var(--s1);border:1px solid var(--b1);border-radius:5px;color:var(--tx);font-family:var(--font);font-size:11px;padding:5px 7px;resize:none;height:36px;outline:none;transition:border .15s;line-height:1.4}
+.ucard-textarea:focus{border-color:var(--purple)}
+.ucard-textarea::placeholder{color:var(--tx3)}
+.ucard-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ucard-status{font-family:var(--mono);font-size:10px;display:flex;align-items:center;gap:5px}
+.ucard-status.pending{color:var(--tx3)}
+.ucard-status.analysing{color:var(--amber)}
+.ucard-status.done{color:var(--green)}
+.ucard-status.error{color:var(--red)}
+.analyse-one-btn{font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;background:var(--purd);border:1px solid var(--purb);color:var(--purple);cursor:pointer;transition:all .15s;white-space:nowrap}
+.analyse-one-btn:hover{background:var(--purple);color:var(--bg)}
+.analyse-one-btn:disabled{opacity:.4;cursor:not-allowed}
+.remove-btn{font-family:var(--mono);font-size:10px;padding:4px 8px;border-radius:5px;background:transparent;border:1px solid var(--b1);color:var(--tx3);cursor:pointer;transition:all .15s}
+.remove-btn:hover{border-color:var(--rb);color:var(--red)}
+
+/* batch bar */
+.batch-bar{flex-shrink:0;padding:12px 14px;border-top:1px solid var(--b1);display:flex;align-items:center;gap:10px;background:var(--s1)}
+.batch-info{font-family:var(--mono);font-size:11px;color:var(--tx3);flex:1}
+.batch-info span{color:var(--tx)}
+.batch-btn{padding:9px 20px;background:var(--purple);border:none;border-radius:var(--r);font-family:var(--mono);font-size:11px;color:#fff;cursor:pointer;transition:opacity .15s;white-space:nowrap;letter-spacing:.04em}
+.batch-btn:hover{opacity:.85}
+.batch-btn:disabled{opacity:.4;cursor:not-allowed}
+.clear-queue-btn{padding:8px 12px;background:transparent;border:1px solid var(--b1);border-radius:var(--r);font-family:var(--mono);font-size:10px;color:var(--tx3);cursor:pointer;transition:all .15s}
+.clear-queue-btn:hover{border-color:var(--rb);color:var(--red)}
+
+/* insights panel */
+.insights-panel{height:100%;display:flex;flex-direction:column;overflow:hidden}
+.insights-head{flex-shrink:0;padding:14px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between}
+.insights-title{font-family:var(--mono);font-size:11px;color:var(--tx2);letter-spacing:.06em}
+.insights-scroll{flex:1;overflow-y:auto;padding:14px}
+.insights-scroll::-webkit-scrollbar{width:3px}
+.insights-scroll::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+.insight-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--tx3);font-size:12px;text-align:center;line-height:1.8;padding:20px}
+
+/* insight card */
+.icard{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:12px;margin-bottom:10px;animation:mfade .2s ease}
+.icard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.icard-setup{font-size:12px;font-weight:500;color:var(--tx)}
+.icard-dir{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:4px}
+.icard-dir.long{background:var(--gd);color:var(--green)}.icard-dir.short{background:var(--rd);color:var(--red)}
+.icard-outcome{font-family:var(--mono);font-size:11px;padding:3px 10px;border-radius:20px;margin-bottom:8px;display:inline-flex;align-items:center;gap:5px}
+.icard-outcome.win{background:var(--gd);color:var(--green);border:1px solid var(--gb)}
+.icard-outcome.loss{background:var(--rd);color:var(--red);border:1px solid var(--rb)}
+.icard-section{font-family:var(--mono);font-size:9px;color:var(--tx3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;margin-top:8px}
+.icard-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.icard-tag{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:4px;background:var(--s1);border:1px solid var(--b1);color:var(--tx3)}
+.icard-tag.key{border-color:var(--gb);color:var(--green);background:var(--gd)}
+.icard-text{font-size:12px;color:var(--tx2);line-height:1.6}
+.icard-warn{display:flex;align-items:flex-start;gap:6px;padding:6px 8px;border-radius:5px;font-size:11px;line-height:1.4;margin-bottom:4px}
+.icard-warn.w{background:var(--rd);border:1px solid var(--rb);color:var(--red)}
+.icard-warn.ok{background:var(--gd);border:1px solid var(--gb);color:var(--green)}
+.icard-img-thumb{width:100%;border-radius:6px;margin-top:6px;border:1px solid var(--b1);cursor:pointer;max-height:80px;object-fit:cover;display:block}
+
+/* summary strip */
+.learn-summary{flex-shrink:0;padding:10px 14px;border-bottom:1px solid var(--b1);background:var(--s2)}
+.ls-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ls-cell{text-align:center}
+.ls-val{font-family:var(--mono);font-size:16px;font-weight:600;margin-bottom:2px}
+.ls-lbl{font-family:var(--mono);font-size:9px;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase}
+
+/* lightbox */
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;align-items:center;justify-content:center;cursor:pointer}
+.lightbox.open{display:flex}
+.lightbox img{max-width:90vw;max-height:90vh;border-radius:var(--r);border:1px solid var(--b2)}
+
+/* ════════ JOURNAL ════════ */
+.journal-shell{display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 46px);overflow:hidden}
+.journal-list{overflow-y:auto;border-right:1px solid var(--b1);padding:14px}
+.journal-list::-webkit-scrollbar{width:3px}
+.journal-list::-webkit-scrollbar-thumb{background:var(--b2)}
+.journal-detail{overflow-y:auto;padding:14px;background:var(--s1)}
+.journal-detail::-webkit-scrollbar{width:3px}
+.journal-detail::-webkit-scrollbar-thumb{background:var(--b2)}
+.journal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.journal-title{font-family:var(--mono);font-size:11px;color:var(--tx2);letter-spacing:.06em}
+.jstats{display:flex;gap:10px}
+.jstat{font-family:var(--mono);font-size:11px;color:var(--tx3)}
+.jstat span{font-weight:500}
+.jstat span.g{color:var(--green)}.jstat span.r{color:var(--red)}.jstat span.a{color:var(--amber)}
+.trade-card{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.trade-card:hover,.trade-card.selected{border-color:var(--b3)}
+.tc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.tc-dir{font-family:var(--mono);font-size:11px;font-weight:500}
+.tc-dir.long{color:var(--green)}.tc-dir.short{color:var(--red)}
+.tc-time{font-family:var(--mono);font-size:10px;color:var(--tx3)}
+.tc-mid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.tc-tag{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:4px;background:var(--s1);border:1px solid var(--b1);color:var(--tx3)}
+.tc-verdict{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:20px}
+.tc-verdict.take{background:var(--gd);color:var(--green)}.tc-verdict.skip{background:var(--rd);color:var(--red)}.tc-verdict.wait{background:var(--ad);color:var(--amber)}
+.tc-outcome{display:flex;align-items:center;gap:8px}
+.outcome-badge{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:4px}
+.outcome-badge.win{background:var(--gd);color:var(--green);border:1px solid var(--gb)}
+.outcome-badge.loss{background:var(--rd);color:var(--red);border:1px solid var(--rb)}
+.outcome-badge.pending{background:var(--b1);color:var(--tx3);border:1px solid var(--b2)}
+.outcome-badge.learned{background:var(--purd);color:var(--purple);border:1px solid var(--purb)}
+.outcome-logger{background:var(--s2);border:1px solid var(--b2);border-radius:var(--r2);padding:14px;margin-top:12px}
+.ol-title{font-family:var(--mono);font-size:10px;color:var(--tx3);letter-spacing:.06em;margin-bottom:12px;text-transform:uppercase}
+.ol-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.ol-field label{display:block;font-family:var(--mono);font-size:10px;color:var(--tx3);margin-bottom:4px}
+.ol-field input{width:100%;background:var(--s1);border:1px solid var(--b1);border-radius:6px;color:var(--tx);font-family:var(--mono);font-size:12px;padding:6px 9px;outline:none;transition:border .15s}
+.ol-field input:focus{border-color:var(--blue)}
+.outcome-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.ob-btn{padding:8px;border-radius:6px;border:1px solid var(--b2);background:var(--s1);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;color:var(--tx3)}
+.ob-btn.win.selected{background:var(--gd);border-color:var(--gb);color:var(--green)}
+.ob-btn.loss.selected{background:var(--rd);border-color:var(--rb);color:var(--red)}
+.save-outcome-btn{width:100%;padding:9px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer;transition:opacity .15s;letter-spacing:.04em}
+.save-outcome-btn:hover{opacity:.85}
+.detail-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--tx3);font-size:12px;font-family:var(--mono)}
+.detail-conf-row{display:flex;align-items:center;gap:6px;font-size:12px;padding:5px 0;border-bottom:1px solid var(--b1)}
+.detail-conf-row:last-child{border-bottom:none}
+.detail-img{width:100%;border-radius:var(--r);border:1px solid var(--b1);margin-top:6px}
+
+/* ════════ EDGE ════════ */
+.edge-shell{overflow-y:auto;padding:20px;height:calc(100vh - 46px)}
+.edge-shell::-webkit-scrollbar{width:4px}
+.edge-shell::-webkit-scrollbar-thumb{background:var(--b2)}
+.edge-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.edge-stat{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:14px;text-align:center}
+.edge-stat-val{font-family:var(--mono);font-size:22px;font-weight:600;margin-bottom:4px}
+.edge-stat-lbl{font-family:var(--mono);font-size:9px;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase}
+.edge-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.edge-card{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:14px}
+.edge-card-title{font-family:var(--mono);font-size:10px;color:var(--tx3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
+.edge-conf-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ecb-label{font-size:11px;color:var(--tx2);width:120px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ecb-bar{flex:1;height:5px;background:var(--b1);border-radius:3px;overflow:hidden}
+.ecb-fill{height:100%;border-radius:3px}
+.ecb-fill.high{background:var(--green)}.ecb-fill.med{background:var(--amber)}.ecb-fill.low{background:var(--red)}
+.ecb-pct{font-family:var(--mono);font-size:10px;color:var(--tx3);width:32px;text-align:right}
+.pattern-list{display:flex;flex-direction:column;gap:6px}
+.pl-item{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--s1);border:1px solid var(--b1);border-radius:6px}
+.pl-name{font-size:12px;color:var(--tx2)}
+.pl-rate{font-family:var(--mono);font-size:11px;font-weight:500}
+.pl-rate.g{color:var(--green)}.pl-rate.r{color:var(--red)}.pl-rate.a{color:var(--amber)}
+.regen-btn{padding:8px 16px;background:var(--s2);border:1px solid var(--b2);border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--tx2);cursor:pointer;transition:all .15s;float:right;margin-bottom:12px}
+.regen-btn:hover{border-color:var(--blue);color:var(--blue)}
+button:focus{outline:none}
+
+/* ── ASK BAR ── */
+.ask-bar{grid-column:1/-1;grid-row:3;display:flex;align-items:center;gap:8px;padding:8px 14px;border-top:1px solid var(--b1);background:var(--bg)}
+.ask-input{flex:1;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);color:var(--tx);font-family:var(--mono);font-size:12px;padding:8px 12px;outline:none;transition:border .15s}
+.ask-input:focus{border-color:var(--blue)}.ask-input::placeholder{color:var(--tx3);font-size:11px}
+.ask-btn{padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-family:var(--mono);font-size:11px;cursor:pointer;white-space:nowrap;font-weight:500;transition:opacity .15s}.ask-btn:hover{opacity:.85}.ask-btn:disabled{opacity:.4;cursor:not-allowed}
+/* ── LEARN PAGE ── */
+.learn-shell{display:flex;flex-direction:column;height:100%;overflow:hidden}
+.learn-header{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--b1);flex-shrink:0}
+.learn-title{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--tx);margin-bottom:4px}
+.learn-sub{font-size:11px;color:var(--tx3);line-height:1.5;max-width:480px}
+.learn-hdr-r{display:flex;align-items:center;gap:10px}
+.learn-stats{font-family:var(--mono);font-size:10px;color:var(--tx3);white-space:nowrap}
+.learn-upload-btn{padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-family:var(--mono);font-size:11px;cursor:pointer;transition:opacity .15s}.learn-upload-btn:hover{opacity:.85}
+.learn-clear-btn{padding:8px 12px;background:transparent;border:1px solid var(--b2);border-radius:var(--r);font-family:var(--mono);font-size:11px;color:var(--tx3);cursor:pointer;transition:all .15s}.learn-clear-btn:hover{border-color:var(--red);color:var(--red)}
+.learn-export-btn{padding:8px 12px;background:transparent;border:1px solid var(--b2);border-radius:var(--r);font-family:var(--mono);font-size:11px;color:var(--tx2);cursor:pointer;transition:all .15s}.learn-export-btn:hover{border-color:var(--green);color:var(--green)}
+.learn-import-lbl{padding:8px 12px;background:transparent;border:1px solid var(--b2);border-radius:var(--r);font-family:var(--mono);font-size:11px;color:var(--tx2);cursor:pointer;transition:all .15s;white-space:nowrap}.learn-import-lbl:hover{border-color:var(--blue);color:var(--blue)}
+
+.learn-hint{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:10px 16px;margin:12px 20px;font-size:11px;color:var(--tx2);line-height:1.6;flex-shrink:0}
+.learn-grid{flex:1;overflow-y:auto;padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;align-content:start}
+.learn-empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--tx3);font-size:13px;font-family:var(--mono);gap:8px}
+.learn-card{background:var(--s1);border:1px solid var(--b2);border-radius:var(--r2);overflow:hidden;position:relative}
+.learn-card img{width:100%;height:150px;object-fit:cover;display:block;cursor:pointer}.learn-card img:hover{opacity:.85}
+.learn-card-body{padding:10px 12px}
+.learn-card-badges{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:6px}
+.lcb{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:10px;font-weight:600}
+.lcb-long{background:rgba(22,199,132,.12);color:var(--green);border:1px solid var(--gb)}
+.lcb-short{background:rgba(234,57,67,.1);color:var(--red);border:1px solid var(--rb)}
+.lcb-win{background:rgba(22,199,132,.15);color:var(--green)}
+.lcb-loss{background:rgba(234,57,67,.12);color:var(--red)}
+.lcb-pend{background:var(--s2);color:var(--tx3)}
+.learn-card-note{font-size:10px;color:var(--tx2);line-height:1.5}
+.learn-card-note.thinking{color:var(--amber);font-style:italic}
+.learn-card-del{position:absolute;top:6px;right:6px;width:22px;height:22px;background:rgba(0,0,0,.65);border:none;border-radius:50%;color:#fff;font-size:11px;cursor:pointer;opacity:0;transition:opacity .15s;display:flex;align-items:center;justify-content:center}.learn-card:hover .learn-card-del{opacity:1}
+
+/* ── SUPABASE SETUP ── */
+.sb-setup{position:fixed;inset:0;background:var(--bg);z-index:998;display:flex;align-items:center;justify-content:center;padding:20px}
+.sb-setup.hidden{display:none}
+.sb-box{background:var(--s1);border:1px solid var(--b2);border-radius:var(--r2);padding:28px;width:100%;max-width:500px}
+.sb-title{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--tx);margin-bottom:4px}
+.sb-desc{font-size:11px;color:var(--tx3);line-height:1.6;margin-bottom:18px}
+.sb-desc a{color:var(--blue);text-decoration:none}.sb-desc a:hover{text-decoration:underline}
+.sb-field{margin-bottom:12px}
+.sb-field label{display:block;font-family:var(--mono);font-size:10px;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
+.sb-input{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);color:var(--tx);font-family:var(--mono);font-size:11px;padding:9px 11px;outline:none;transition:border .15s}
+.sb-input:focus{border-color:var(--blue)}
+.sb-btn{width:100%;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-family:var(--mono);font-size:12px;font-weight:500;cursor:pointer;margin-top:4px;transition:opacity .15s}
+.sb-btn:hover{opacity:.85}.sb-btn:disabled{opacity:.4;cursor:not-allowed}
+.sb-error{font-size:11px;color:var(--red);margin-top:8px;font-family:var(--mono);display:none}
+.sb-skip{text-align:center;margin-top:12px;font-size:11px;color:var(--tx3)}
+.sb-skip a{color:var(--blue);cursor:pointer;text-decoration:none}.sb-skip a:hover{text-decoration:underline}
+.sb-cloud-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(22,199,132,.1);border:1px solid var(--gb);border-radius:20px;padding:3px 10px;font-family:var(--mono);font-size:9px;color:var(--green);margin-left:8px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<!-- LIGHTBOX -->
+<div class="setup-screen" id="setup-screen">
+  <div class="setup-box">
+    <div class="setup-logo">
+      <div class="setup-logo-mark"><svg viewBox="0 0 20 20" fill="none"><polyline points="2,14 6,8 10,11 14,5 18,7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="14" cy="5" r="2.5" fill="white"/></svg></div>
+      <div><div class="setup-logo-name">NEO</div><div class="setup-logo-sub">NQ · ICT AI DESK</div></div>
+    </div>
+    <div class="setup-title">Connect your Anthropic API key</div>
+    <div class="setup-desc">NEO needs your Anthropic API key to analyse trades. It is stored only in your browser and sent directly to Anthropic — nowhere else.<br><br>Get your key: <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> → API Keys → Create Key.</div>
+    <div class="setup-input-wrap">
+      <label>Anthropic API Key <span style="color:var(--red)">*</span></label>
+      <input class="setup-input" id="api-key-input" type="password" placeholder="sk-ant-api03-..." autocomplete="off" onkeydown="if(event.key==='Enter') saveApiKey()"/>
+      <div class="setup-hint">Starts with sk-ant-api03-</div>
+    </div>
+
+    <div style="border-top:1px solid var(--b1);margin:14px 0 12px;padding-top:14px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--tx3);letter-spacing:.06em;margin-bottom:8px">☁ SUPABASE — CLOUD STORAGE (OPTIONAL)</div>
+      <div style="font-size:11px;color:var(--tx3);line-height:1.6;margin-bottom:10px">Stores learning screenshots in the cloud — syncs across devices, never lost.<br><a href="https://supabase.com" target="_blank" style="color:var(--blue)">supabase.com</a> → project → Settings → API</div>
+      <div class="setup-input-wrap" style="margin-bottom:8px">
+        <label>Supabase Project URL</label>
+        <input class="setup-input" id="sb-url-input" type="text" placeholder="https://xxxxxxxxxxxx.supabase.co" autocomplete="off"/>
+      </div>
+      <div class="setup-input-wrap">
+        <label>Supabase Publishable Key</label>
+        <input class="setup-input" id="sb-key-input" type="password" placeholder="sb_publishable_..." autocomplete="off"/>
+        <div class="setup-hint">Settings → API Keys → Publishable key</div>
+      </div>
+    </div>
+
+    <button class="setup-btn" id="setup-save-btn" onclick="saveApiKey()">Launch NEO →</button>
+    <div class="setup-error" id="setup-error"></div>
+    <div class="setup-footer">Your key is stored in your browser only — never sent anywhere except Anthropic.<br>Sonnet 4.5 (live) · Opus 4 (learning &amp; briefing)</div>
+  </div>
+</div>
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightbox-img" src="" alt=""/>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab-brand">
+    <div class="tab-brand-mark"><svg viewBox="0 0 12 12" fill="none"><polyline points="1,9 4,5 6,7 9,3 11,4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="3" r="1.6" fill="white"/></svg></div>
+    <span class="tab-brand-name">NQ · <span style="color:var(--blue)">NEO</span></span>
+  </div>
+  <div class="tab active" onclick="switchTab('live')">Live Desk</div>
+  <div class="tab" onclick="switchTab('learn')">Learning</div>
+  <div class="topright">
+    <div class="kz-timer closed" id="kz-timer">⏱ —:—</div>
+    <div class="price-ticker" id="price-ticker" title="NQ Futures live price">
+      <span class="ticker-label">NQ</span>
+      <span class="ticker-price" id="ticker-price">—</span>
+      <span class="ticker-change" id="ticker-change"></span>
+    </div>
+    <div class="session-badge"><span class="sdot"></span>NEO · NY AM · 9:30–11:30</div>
+    <button class="toolbar-btn" id="briefing-btn" onclick="openBriefing()">📋 Briefing</button>
+    <button class="toolbar-btn" id="replay-btn" onclick="openReplay()">▶ Replay</button>
+    <button class="toolbar-btn" id="debrief-btn" onclick="openDebrief()">📊 Debrief</button>
+    <button class="risk-toggle-btn" onclick="toggleRiskBar()">⚖ Risk calc</button>
+    <button class="settings-btn" onclick="showSetup()" title="API key settings">⚙</button>
+    <span style="font-family:var(--mono);font-size:9px;color:var(--tx3);padding:2px 6px;background:var(--s2);border:1px solid var(--b1);border-radius:4px;white-space:nowrap">LIVE: Sonnet · LEARN: Opus</span>
+  </div>
+</div>
+
+<!-- ══ PAGE: LIVE DESK ══ -->
+<div class="page active" id="page-live">
+  <div class="live-shell">
+    <div class="screen-area" id="screen-area">
+      <video id="sv" autoplay muted playsinline style="display:none"></video>
+      <canvas id="sc" style="display:none"></canvas>
+      <div class="scan-anim" id="scan-anim"></div>
+      <div class="live-badge" id="live-badge">● LIVE CHART</div>
+      <div class="screen-empty" id="screen-empty" onclick="startShare()">
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none"><rect x="4" y="8" width="36" height="24" rx="3" stroke="currentColor" stroke-width="1.5"/><line x1="22" y1="32" x2="22" y2="38" stroke="currentColor" stroke-width="1.5"/><line x1="14" y1="38" x2="30" y2="38" stroke="currentColor" stroke-width="1.5"/><polyline points="11,26 16,19 20,22 27,14 33,17" stroke="#4d8bf5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <p>Click to share your<br><strong>TradingView window</strong><br><small style="color:var(--tx3);font-size:10px">auto-detects TradingView</small></p>
+        <span>opens screen picker</span>
+      </div>
+    </div>
+    <div class="resp-area">
+      <div class="resp-scroll" id="resp-scroll">
+        <div class="resp-empty" id="resp-empty">
+          <div style="font-size:28px;opacity:.2">🧠</div>
+          <div>1. Click <strong style="color:var(--tx)">📺 Share Screen</strong> → pick TradingView<br><br>2. When you see a setup forming:<br><strong style="color:var(--green)">F1 = LONG</strong> &nbsp;·&nbsp; <strong style="color:var(--red)">F2 = SHORT</strong><br><br><strong style="color:var(--blue)">NEO</strong> reads your chart and responds in seconds.</div>
+        </div>
+      </div>
+    </div>
+    <!-- RISK CALCULATOR STRIP -->
+    <div class="risk-bar-strip" id="risk-bar-strip">
+      <div class="risk-field">
+        <label>STOP (pts)</label>
+        <input class="risk-input" id="risk-pts" type="number" step="0.25" placeholder="e.g. 12" oninput="calcRisk()"/>
+      </div>
+      <div class="risk-divider"></div>
+      <div class="risk-field">
+        <label>MAX RISK ($)</label>
+        <input class="risk-input" id="risk-dollars" type="number" step="10" placeholder="e.g. 500" oninput="calcRisk()"/>
+      </div>
+      <div class="risk-divider"></div>
+      <div class="risk-result" id="risk-result">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--tx3)">Enter stop & risk above</span>
+      </div>
+      <div class="risk-divider"></div>
+      <div class="risk-field" style="gap:4px">
+        <label>ACCT ($)</label>
+        <input class="risk-input" id="risk-acct" type="number" step="100" placeholder="optional" oninput="calcRisk()" style="width:90px"/>
+      </div>
+    </div>
+    <div class="intrade-bar" id="intrade-bar">
+      <span class="intrade-dot"></span>
+      <span class="intrade-label">IN TRADE</span>
+      <span class="intrade-divider"></span>
+      <span class="intrade-entry" id="intrade-entry">—</span>
+      <span class="intrade-divider"></span>
+      <div class="intrade-actions">
+        <button class="intrade-btn" onclick="sendMgmt('Should I trail my stop loss now? What ICT level should I move it to based on current price action?')">Trail SL</button>
+        <button class="intrade-btn" onclick="sendMgmt('Should I take partials here? How much and at what level based on what you see on the chart?')">Take partials</button>
+        <button class="intrade-btn" onclick="sendMgmt('Is the trade still valid or are there signs I should exit early? Check for any MSS against my position.')">Check validity</button>
+        <button class="intrade-btn" onclick="sendMgmt('What is my draw on liquidity from here and where is the next optimal target level?')">Next target</button>
+        <button class="intrade-btn close-trade" onclick="closeInTrade()">✕ Close trade</button>
+      </div>
+    </div>
+    <div class="hotkey-bar">
+      <div class="hk-section">
+        <button class="hk-btn hk-long" id="hk-long" onclick="triggerAnalysis('long')">
+          <span class="hk-arrow">▲</span>
+          <span class="hk-label">LONG</span>
+          <span class="hk-key">F1</span>
+        </button>
+        <button class="hk-btn hk-short" id="hk-short" onclick="triggerAnalysis('short')">
+          <span class="hk-arrow">▼</span>
+          <span class="hk-label">SHORT</span>
+          <span class="hk-key">F2</span>
+        </button>
+      </div>
+      <div class="hk-divider"></div>
+      <div class="hk-status-section">
+        <div class="hk-status-label">NEO STATUS</div>
+        <div class="hk-status" id="hk-status">Ready — F1 for long · F2 for short</div>
+      </div>
+      <div class="hk-divider"></div>
+      <div class="hk-right">
+        <button class="btn-share" id="btn-share" onclick="startShare()">📺 Share screen</button>
+        <button class="btn-clear-chat" onclick="clearChat()">Clear chat</button>
+        <button class="hk-settings-btn" onclick="openHkSettings()">⌨ Keys</button>
+      </div>
+    </div>
+      <!-- ASK NEO -->
+    <div class="ask-bar">
+      <input class="ask-input" id="ask-input" type="text"
+        placeholder="Ask NEO anything… e.g. if we close bullish above this high shall I enter?"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();askNeo()}"/>
+      <button class="ask-btn" id="ask-btn" onclick="askNeo()">Ask ↵</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: LEARNING ══ -->
+<div class="page" id="page-learn">
+  <div class="learn-shell">
+    <div class="learn-header">
+      <div>
+        <div class="learn-title">📚 NEO LEARNING</div>
+        <div class="learn-sub">Upload annotated trade screenshots. NEO reads your annotations automatically — no extra input needed.</div>
+      </div>
+      <div class="learn-hdr-r">
+        <div class="learn-stats" id="learn-stats">0 screenshots</div>
+        <div id="cloud-status" style="font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:10px;background:var(--s2);color:var(--tx3);border:1px solid var(--b2)">⬜ LOCAL</div>
+        <button class="learn-export-btn" onclick="exportLearning()" title="Save all screenshots to a backup file">⬇ Export</button>
+        <label class="learn-import-lbl" for="learn-import-input" title="Restore from a backup file">⬆ Import
+          <input type="file" id="learn-import-input" accept=".json" style="display:none" onchange="importLearning(event)"/>
+        </label>
+        <label class="learn-upload-btn" for="learn-file-input">+ Upload
+          <input type="file" id="learn-file-input" accept="image/*" multiple style="display:none" onchange="handleLearnUpload(event)"/>
+        </label>
+        <button class="learn-clear-btn" onclick="clearLearning()">Clear all</button>
+      </div>
+    </div>
+    <div class="learn-hint"><strong>Annotation guide:</strong> Mark on your screenshot: Direction (Long/Short) · Win/Loss · MSS · Liquidity sweep · SMT · FVG · Entry. NEO reads all text and arrows you draw.</div>
+    <div class="learn-grid" id="learn-grid">
+      <div class="learn-empty"><div style="font-size:32px">📷</div><div>No screenshots yet</div><div style="font-size:11px">Upload annotated trades to build NEO's memory</div></div>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  SUPABASE CLOUD STORAGE
+// ═══════════════════════════════════════════════════════
+const SB_URL_STORE = 'neo_sb_url_v1';
+const SB_KEY_STORE = 'neo_sb_key_v1';
+const SB_DEV_STORE = 'neo_sb_device_v1';
+const BUCKET = 'neo-screenshots';
+const TABLE  = 'learn_entries';
+
+var sbClient = null;
+
+function getDeviceId(){
+  var id = localStorage.getItem(SB_DEV_STORE);
+  if(!id){ id='dev-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8); localStorage.setItem(SB_DEV_STORE,id); }
+  return id;
+}
+function getSbUrl(){ return localStorage.getItem(SB_URL_STORE)||''; }
+function getSbKey(){ return localStorage.getItem(SB_KEY_STORE)||''; }
+function hasCloud(){ return sbClient !== null; }
+
+function initSupabase(){
+  var url=getSbUrl(), key=getSbKey();
+  if(!url||!key||typeof supabase==='undefined'){ sbClient=null; return false; }
+  try{
+    sbClient = supabase.createClient(url, key);
+    console.log('[NEO] Supabase connected');
+    setTimeout(function(){
+      var el=document.getElementById('cloud-status');
+      if(el){el.textContent='☁ CLOUD';el.style.color='var(--green)';el.style.borderColor='var(--gb)';el.style.background='rgba(22,199,132,.1)';}
+      loadFromCloud();
+    }, 500);
+    return true;
+  }catch(e){ console.warn('[NEO] Supabase init failed:',e.message); sbClient=null; return false; }
+}
+
+async function sbUploadImage(id, b64){
+  if(!sbClient) return null;
+  try{
+    var arr=b64.split(','), mime=arr[0].match(/:(.*?);/)[1];
+    var bstr=atob(arr[1]), n=bstr.length, u8=new Uint8Array(n);
+    for(var i=0;i<n;i++) u8[i]=bstr.charCodeAt(i);
+    var blob=new Blob([u8],{type:mime});
+    var path=getDeviceId()+'/'+id+'.jpg';
+    var res=await sbClient.storage.from(BUCKET).upload(path,blob,{upsert:true,contentType:'image/jpeg'});
+    if(res.error){console.warn('SB upload:',res.error.message);return null;}
+    return sbClient.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  }catch(e){console.warn('SB upload exception:',e.message);return null;}
+}
+
+async function sbSaveEntry(entry){
+  if(!sbClient) return;
+  try{
+    var row={id:entry.id,device_id:getDeviceId(),name:entry.name||'',direction:entry.direction||'unknown',outcome:entry.outcome||'unknown',concepts:entry.concepts||[],note:entry.note||'',img_url:entry.imgUrl||null,ts:entry.ts||Date.now()};
+    var res=await sbClient.from(TABLE).upsert(row);
+    if(res.error) console.warn('SB save:',res.error.message);
+  }catch(e){console.warn('SB save exception:',e.message);}
+}
+
+async function sbDeleteEntry(id){
+  if(!sbClient) return;
+  try{
+    await sbClient.from(TABLE).delete().eq('id',id).eq('device_id',getDeviceId());
+    await sbClient.storage.from(BUCKET).remove([getDeviceId()+'/'+id+'.jpg']);
+  }catch(e){console.warn('SB delete:',e.message);}
+}
+
+async function sbLoadEntries(){
+  if(!sbClient) return null;
+  try{
+    var res=await sbClient.from(TABLE).select('*').eq('device_id',getDeviceId()).order('ts',{ascending:true});
+    if(res.error){console.warn('SB load:',res.error.message);return null;}
+    return res.data;
+  }catch(e){console.warn('SB load:',e.message);return null;}
+}
+
+
+
+async function syncLocalToCloud(){
+  if(!hasCloud()||!learnData.length) return;
+  for(var i=0;i<learnData.length;i++){
+    var e=learnData[i];
+    if(e.b64&&e.b64.startsWith('data:')&&!e.imgUrl){ var url=await sbUploadImage(e.id,e.b64); if(url) e.imgUrl=url; }
+    await sbSaveEntry(e);
+  }
+  saveLearnData();
+}
+async function loadFromCloud(){
+  if(!hasCloud()) return;
+  var rows=await sbLoadEntries();
+  if(!rows||!rows.length) return;
+  var ids=new Set(learnData.map(function(e){return e.id;}));
+  var added=0;
+  rows.forEach(function(row){
+    if(!ids.has(row.id)){
+      learnData.push({id:row.id,b64:row.img_url||'',imgUrl:row.img_url||'',name:row.name||'',direction:row.direction||'unknown',outcome:row.outcome||'unknown',concepts:row.concepts||[],note:row.note||'',ts:row.ts||0,fromCloud:true});
+      added++;
+    }
+  });
+  if(added){saveLearnData();renderLearnPage();updateLearnStats();}
+}
+
+// ═══════════════════════════════════════════════════════
+//  EXPORT / IMPORT LEARNING DATA
+// ═══════════════════════════════════════════════════════
+function exportLearning(){
+  if(!learnData.length){
+    alert('No screenshots to export yet.');
+    return;
+  }
+  var exportObj = {
+    version: 1,
+    exported: new Date().toISOString(),
+    count: learnData.length,
+    data: learnData
+  };
+  var json = JSON.stringify(exportObj, null, 2);
+  var blob = new Blob([json], {type:'application/json'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  var date = new Date().toISOString().slice(0,10);
+  a.href     = url;
+  a.download = 'NEO-learning-backup-' + date + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importLearning(event){
+  var file = event.target.files[0];
+  if(!file) return;
+  event.target.value = '';
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var obj = JSON.parse(e.target.result);
+      // Support both raw array and wrapped export format
+      var incoming = Array.isArray(obj) ? obj : (obj.data || []);
+      if(!incoming.length){ alert('No screenshots found in backup file.'); return; }
+      // Merge — skip duplicates by id
+      var existingIds = new Set(learnData.map(function(x){return x.id;}));
+      var added = 0;
+      incoming.forEach(function(entry){
+        if(!existingIds.has(entry.id)){
+          learnData.push(entry);
+          added++;
+        }
+      });
+      saveLearnData();
+      renderLearnPage();
+      updateLearnStats();
+      alert('Imported ' + added + ' screenshots. (' + (incoming.length - added) + ' duplicates skipped.)');
+    }catch(err){
+      alert('Import failed: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════════════
+//  LEARNING MODULE
+// ═══════════════════════════════════════════════════════
+const DB_LEARN = 'neo_learn_v1';
+var learnData = (function(){ try{ return JSON.parse(localStorage.getItem('neo_learn_v1')||'[]'); }catch(e){ return []; } })();
+
+function saveLearnData(){ localStorage.setItem(DB_LEARN, JSON.stringify(learnData)); }
+
+function lcBadge(cls, txt){ return '<span class="lcb '+cls+'">'+txt+'</span>'; }
+
+function learnCardHTML(e){
+  var db = e.direction==='long'?lcBadge('lcb-long','▲ LONG'):e.direction==='short'?lcBadge('lcb-short','▼ SHORT'):lcBadge('lcb-pend','?');
+  var ob = e.outcome==='win'?lcBadge('lcb-win','WIN'):e.outcome==='loss'?lcBadge('lcb-loss','LOSS'):lcBadge('lcb-pend','…');
+  var cs = (e.concepts||[]).length ? '<span style="font-size:9px;color:var(--tx3)">'+escH(e.concepts.slice(0,4).join(' · '))+'</span>' : '';
+  var thinking = (!e.note||e.note.startsWith('NEO')||e.note.startsWith('Read'))?'thinking':'';
+  return '<img src="'+e.b64+'" onclick="openLightboxSrc(this.src)" style="width:100%;height:150px;object-fit:cover;display:block;cursor:pointer;transition:opacity .15s"/>'
+    +"<button class=\"learn-card-del\" onclick=\"deleteLearnEntry('"+e.id+"')\" title=\"Delete\">✕</button>"
+    +'<div class="learn-card-body"><div class="learn-card-badges">'+db+ob+cs+'</div>'
+    +'<div class="learn-card-note '+thinking+'">'+escH(e.note||'No annotation found')+'</div></div>';
+}
+
+function renderLearnCard(entry){
+  var grid = document.getElementById('learn-grid');
+  if(!grid) return;
+  var card = document.createElement('div');
+  card.className='learn-card'; card.id='lcard-'+entry.id;
+  card.innerHTML = learnCardHTML(entry);
+  grid.appendChild(card);
+}
+
+function refreshLearnCard(entry){
+  var card = document.getElementById('lcard-'+entry.id);
+  if(card) card.innerHTML = learnCardHTML(entry);
+}
+
+async function handleLearnUpload(event){
+  var files = Array.from(event.target.files||[]);
+  if(!files.length) return;
+  event.target.value = '';
+  var grid = document.getElementById('learn-grid');
+  if(grid){ var emp=grid.querySelector('.learn-empty'); if(emp) emp.remove(); }
+  for(var i=0;i<files.length;i++){
+    var file = files[i];
+    var id = 'L'+Date.now()+Math.random().toString(36).slice(2,6);
+    var b64 = await new Promise(function(res){ var r=new FileReader(); r.onload=function(e){res(e.target.result);}; r.readAsDataURL(file); });
+    var entry = {id:id, b64:b64, name:file.name, note:'NEO reading annotation…', direction:'unknown', outcome:'unknown', concepts:[], imgUrl:null, ts:Date.now()};
+    learnData.push(entry);
+    saveLearnData();
+    renderLearnCard(entry);
+    updateLearnStats();
+    if(hasCloud()){ sbUploadImage(id, b64).then(function(url){ if(url){entry.imgUrl=url;saveLearnData();} }); }
+    analyseLearnEntry(entry);
+  }
+}
+
+async function analyseLearnEntry(entry){
+  if(!getApiKey()) return;
+  var sys = 'You are an expert ICT 2022 NQ futures analyst reviewing an annotated trade screenshot. Read every label, arrow, and marking on the chart carefully. Extract: direction (long/short/unknown), outcome (win/loss/unknown), all ICT concepts marked (MSS, CHoCH, FVG, OB, liquidity sweep, SSL, BSL, SMT, BISI, SIBI, OTE, PD array, entry, etc). Write a concise note explaining what the setup shows from an ICT perspective. Return ONLY this JSON: {"direction":"long","outcome":"win","concepts":["MSS","FVG","Liquidity Sweep"],"note":"one sentence ICT analysis of the annotated setup"}';
+  try{
+    var resp = await neoFetch([{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:'image/jpeg',data:entry.b64.split(',')[1]}},
+      {type:'text',text:'Extract all trade annotation data from this screenshot.'}
+        ]}], sys, 400, MODEL_LIVE);
+    var d = extractJSON(resp);
+    entry.direction = d.direction||'unknown';
+    entry.outcome   = d.outcome||'unknown';
+    entry.concepts  = d.concepts||[];
+    entry.note      = d.note||'Annotation read';
+    saveLearnData(); refreshLearnCard(entry); updateLearnStats();
+    saveLearnEntryToCloud(entry);
+  }catch(err){
+    entry.note = 'Read error: '+err.message.slice(0,60);
+    saveLearnData(); refreshLearnCard(entry);
+    if(hasCloud()) sbSaveEntry(entry);
+  }
+}
+
+function deleteLearnEntry(id){
+  learnData = learnData.filter(function(e){return e.id!==id;});
+  saveLearnData();
+  deleteLearnEntryFromCloud(id);
+  var card = document.getElementById('lcard-'+id);
+  if(card) card.remove();
+  updateLearnStats();
+  if(hasCloud()) sbDeleteEntry(id);
+  var grid = document.getElementById('learn-grid');
+  if(grid && !grid.querySelector('.learn-card')){
+    grid.innerHTML='<div class="learn-empty"><div style="font-size:32px">📷</div><div>No screenshots yet</div></div>';
+  }
+}
+
+function clearLearning(){
+  if(!confirm('Clear all '+learnData.length+' screenshots from NEO memory?')) return;
+  learnData=[]; saveLearnData();
+  var grid=document.getElementById('learn-grid');
+  if(grid) grid.innerHTML='<div class="learn-empty"><div style="font-size:32px">📷</div><div>No screenshots yet</div></div>';
+  updateLearnStats();
+}
+
+function updateLearnStats(){
+  var el=document.getElementById('learn-stats');
+  if(!el) return;
+  var w=learnData.filter(function(e){return e.outcome==='win';}).length;
+  var l=learnData.filter(function(e){return e.outcome==='loss';}).length;
+  el.textContent=learnData.length+' screenshots · '+w+'W / '+l+'L';
+}
+
+function renderLearnPage(){
+  var grid=document.getElementById('learn-grid');
+  if(!grid) return;
+  if(!learnData.length){
+    grid.innerHTML='<div class="learn-empty"><div style="font-size:32px">📷</div><div>No screenshots yet</div><div style="font-size:11px">Upload annotated trades</div></div>';
+    return;
+  }
+  grid.innerHTML='';
+  learnData.forEach(function(e){ renderLearnCard(e); });
+  updateLearnStats();
+}
+
+// ═══════════════════════════════════════════════════════
+//  ASK NEO — free text question
+// ═══════════════════════════════════════════════════════
+async function askNeo(){
+  var input = document.getElementById('ask-input');
+  var btn   = document.getElementById('ask-btn');
+  var q = input ? input.value.trim() : '';
+  if(!q || isThinking) return;
+  if(!getApiKey()){ addErrorBubble('No API key — click ⚙'); return; }
+  input.value=''; btn.disabled=true; isThinking=true;
+  var frame = captureFrame();
+  removeEmpty();
+  var loadId = addLoadingBubble();
+  var msgContent=[];
+  if(frame) msgContent.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:frame.split(',')[1]}});
+  msgContent.push({type:'text',text:q});
+  convHistory.push({role:'user',content:msgContent});
+  var sys = ICT_KB+'\n\nYou are NEO, ICT 2022 NQ analyst. Answer the question directly — 2-3 sentences, plain English, no JSON. Focus on ICT structure visible on chart.';
+  try{
+    var text = await neoFetch(convHistory, sys, 300, MODEL_LIVE);
+    convHistory.push({role:'assistant',content:text});
+    removeLoading(loadId);
+    var scroll=document.getElementById('resp-scroll');
+    var el=document.createElement('div'); el.className='msg';
+    el.innerHTML='<div class="msg-meta">NEO · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</div>'
+      +'<div class="bubble-ai"><div class="bubble-text" style="font-size:13px;line-height:1.6">'+escH(text)+'</div></div>';
+    scroll.appendChild(el); scroll.scrollTop=scroll.scrollHeight;
+    neoSpeak(text.slice(0,200));
+  }catch(err){
+    removeLoading(loadId); addErrorBubble(err.message); convHistory.pop();
+  }
+  isThinking=false; btn.disabled=false;
+}
+
+// ═══════════════════════════════════════════
+//  STORAGE
+// ═══════════════════════════════════════════
+const DB_TRADES  = 'nq_ict_trades_v3';
+
+// ═══════════════════════════════════════════
+//  STATE VARIABLES
+// ═══════════════════════════════════════════
+let trades          = loadTrades();
+let learned         = [];
+let isListening     = false;
+let isThinking      = false;
+let inTradeActive   = false;
+let mediaStream     = null;
+let accumulatedTranscript = '';
+let convHistory     = [];
+let recognition     = null;
+let currentShotData = null;
+
+
+// ════════════════════════════════════════════════════
+//  NEO API LAYER — single authenticated fetch wrapper
+// ════════════════════════════════════════════════════
+const API_KEY_STORE = 'neo_anthropic_key_v1';
+// ── NEO MODEL ROUTING ──────────────────────────────
+const MODEL_LIVE = 'claude-sonnet-4-5-20250929'; // Sonnet — deep chart analysis for F1/F2
+const MODEL_FAST = 'claude-haiku-4-5-20251001';  // Haiku — fast for ask box + learn annotations
+const MODEL_DEEP = 'claude-opus-4-20250514';   // Opus 4 — deep reasoning   // learning, briefing, debrief
+
+const ICT_KB = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ICT 2022 MODEL — COMPLETE KNOWLEDGE BASE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+═══ CORE PHILOSOPHY ═══
+Smart money (banks/institutions) cannot fill orders at a single price — they need liquidity.
+Price is engineered to reach liquidity pools, fill institutional orders, then reverse.
+Retail traders are the liquidity. Their stop losses are the fuel for institutional entries.
+Every candle, every move has a purpose: to either reach liquidity or deliver price to a PD array.
+
+═══ TIME — THE MOST IMPORTANT VARIABLE ═══
+ICT trades are TIME-based first, then price. Setups only qualify during specific kill zones.
+
+KILL ZONES (all times EST):
+• Asian Session: 8:00 PM – 12:00 AM — range building, liquidity engineering
+• London Open Kill Zone: 2:00 AM – 5:00 AM — highest probability reversals
+• NY AM Kill Zone: 8:30 AM – 11:00 AM — PRIMARY session, best NQ setups
+• NY Lunch: 12:00 PM – 1:00 PM — avoid, choppy, low probability
+• NY PM Kill Zone: 1:30 PM – 4:00 PM — secondary, lower probability than AM
+
+NY AM KILL ZONE (primary focus for this bot):
+• 9:30 open is the single most important moment of the day
+• First 30 minutes often create a manipulation move (the fake)
+• True directional move begins after the manipulation leg is complete
+• ICT: "The market will seek liquidity before it seeks to deliver price"
+• Watch for sweep of Asian range highs or lows in the first 15-30 mins of NY AM
+
+POWER OF 3 (AMD Model — Accumulation, Manipulation, Distribution):
+• Accumulation: Smart money builds position quietly (Asian session / pre-market)
+• Manipulation: Price spikes AGAINST the true direction to grab liquidity (stop hunt)
+• Distribution: Price delivers in the true direction after manipulation complete
+• On M1 during NY AM: AMD can play out in as little as 15-30 minutes
+• Never trade the Accumulation or Manipulation legs — only the Distribution
+
+OPTIMAL TIME FOR M1 ENTRIES:
+• 9:30-9:50 AM: Manipulation sweep of overnight range / Asian high or low
+• 9:50-10:30 AM: Distribution leg begins — highest probability M1 entries
+• 10:30-11:00 AM: Extension to next PD array, possible partials zone
+
+═══ MARKET STRUCTURE ═══
+SWING HIGH/LOW CLASSIFICATION:
+• Swing High: candle with lower highs on both sides (3-bar minimum)
+• Swing Low: candle with higher lows on both sides
+• Internal swing: smaller structure within a larger range
+• External swing: the major swing points that define the dealing range
+
+BREAK OF STRUCTURE (BOS):
+• Price closes beyond a prior swing high (bullish BOS) or swing low (bearish BOS)
+• BOS = continuation signal, same direction as prior move
+• Only valid when it occurs after a pullback to a PD array
+• False BOS = engineered liquidity grab, often signals reversal
+
+CHANGE OF CHARACTER (CHoCH) / MARKET STRUCTURE SHIFT (MSS):
+• CHoCH: first sign of a potential reversal — closes beyond the most recent internal swing
+• MSS: confirmed when price closes beyond a significant external swing in the opposite direction
+• CHoCH on M1 during NY AM = entry trigger for distribution leg
+• MSS after liquidity sweep = highest probability entry signal in the 2022 model
+• Sequence for long: price sweeps sellside liquidity → CHoCH to the upside → entry on retracement to OB/FVG
+
+DEALING RANGE:
+• Defined by the most recent swing high and swing low
+• Premium zone: upper 50% of range — ideal for shorts
+• Equilibrium (EQ): 50% of range (0.50 Fibonacci)
+• Discount zone: lower 50% of range — ideal for longs
+• Rule: only buy in discount, only sell in premium (relative to HTF dealing range)
+• M1 application: identify the NY AM dealing range from the first 15 min, trade from extremes
+
+═══ PD ARRAYS (Premium/Discount Arrays) — IN ORDER OF STRENGTH ═══
+PD arrays are the specific price levels where smart money places orders.
+Listed strongest to weakest:
+
+BULLISH PD ARRAYS (buy from these when in discount):
+1. Breaker Block — former bearish OB that price broke through, now acts as support
+2. Bullish Order Block (OB) — last down-close candle before a bullish impulse
+3. Bullish Mitigation Block — area where failed swing low was created
+4. Bullish Fair Value Gap (FVG / IFVG) — three-candle imbalance, gap between candle[0] high and candle[2] low
+5. Bullish Void — single large up candle with no overlap
+6. Strong High — a high that caused significant displacement
+
+BEARISH PD ARRAYS (sell from these when in premium):
+1. Breaker Block — former bullish OB that price broke through, now acts as resistance
+2. Bearish Order Block (OB) — last up-close candle before a bearish impulse
+3. Bearish Mitigation Block — area where failed swing high was created
+4. Bearish Fair Value Gap (FVG) — three-candle imbalance, gap between candle[0] low and candle[2] high
+5. Bearish Void — single large down candle with no overlap
+6. Strong Low — a low that caused significant displacement
+
+═══ ORDER BLOCKS (OB) — DETAILED ═══
+BULLISH ORDER BLOCK:
+• The last red (bearish) candle in a down move BEFORE a strong bullish displacement
+• Must be followed by at least 3 bullish candles or a strong impulse away
+• Best OBs: in discount zone, after a liquidity sweep, on M1/M5 aligned with HTF
+• Entry: price retraces INTO the OB (ideally the upper 25% — the "breaker" portion)
+• Invalidation: price closes below the OB low
+• On M1: OBs from the 5-15 min range before NY open are extremely powerful
+
+BEARISH ORDER BLOCK:
+• The last green (bullish) candle in an up move BEFORE a strong bearish displacement
+• Must be followed by at least 3 bearish candles or a strong impulse away
+• Best OBs: in premium zone, after a liquidity sweep, after CHoCH
+• Entry: price retraces INTO the OB (ideally lower 25%)
+• Invalidation: price closes above the OB high
+
+OB REFINEMENT (ICT 2022):
+• Use the 50% level of the OB as the "consequent encroachment" — key reaction point
+• OB + FVG overlap = "OB sandwich" — extremely high probability
+• Old OBs (multiple touches) lose strength — prefer virgin OBs (untouched)
+• M1 OBs are valid during kill zones only — same OB outside kill zone = lower probability
+
+═══ FAIR VALUE GAPS (FVG) ═══
+DEFINITION: Three consecutive candles where candle[1]'s body creates a gap between candle[0]'s high and candle[2]'s low (bullish) or candle[0]'s low and candle[2]'s high (bearish).
+
+BULLISH FVG: candle[0] high < candle[2] low — imbalance, price wants to fill it
+BEARISH FVG: candle[0] low > candle[2] high — imbalance, price wants to fill it
+
+FVG TYPES:
+• SIBI (Sellside Imbalance Buyside Inefficiency) — bullish FVG created during up move
+• BISI (Buyside Imbalance Sellside Inefficiency) — bearish FVG created during down move
+
+FVG KEY RULES:
+• Consequent Encroachment (CE): the 50% level of the FVG — strongest reaction point
+• First touch of FVG is highest probability — each subsequent touch weakens it
+• FVG above current price = draw on liquidity for longs (target)
+• FVG below current price = draw on liquidity for shorts (target)
+• Overlapping FVGs (stacked) = very strong level
+• FVG that overlaps an OB = extremely high confluence entry zone
+
+ICT 2022 FVG RULE: Price will always return to fill at least 50% of every FVG eventually.
+Use unfilled FVGs above/below as targets. Never fight price when it is filling a FVG.
+
+═══ LIQUIDITY — THE ENGINE OF PRICE ═══
+LIQUIDITY POOLS (where stops cluster):
+• Equal highs (EQH): two or more highs at similar levels — BSL (Buyside Liquidity)
+• Equal lows (EQL): two or more lows at similar levels — SSL (Sellside Liquidity)
+• Previous day high (PDH) — major BSL
+• Previous day low (PDL) — major SSL
+• Previous week high/low — HTF liquidity
+• Asian session high/low — primary NY AM liquidity targets
+• Swing highs/lows — obvious stop clusters
+• Round numbers (18000, 18500 on NQ) — psychological stops
+
+LIQUIDITY SWEEP MECHANICS:
+• BSL sweep: wick above equal highs / prior swing high, then closes back below — bearish signal
+• SSL sweep: wick below equal lows / prior swing low, then closes back above — bullish signal
+• Sweep must be followed by CHoCH to confirm reversal — sweep alone is not an entry
+• "Turtle Soup": classic retail setup fade — price sweeps obvious liquidity then reverses hard
+• M1 application: watch for sweep of Asian low in first 15 mins of NY AM → long setup
+
+STOP HUNT CHARACTERISTICS:
+• Usually occurs as a single aggressive wick candle (1-3 bars on M1)
+• Volume spike on the sweep candle
+• Immediate close back through the liquidity level
+• Sets up the highest probability ICT entries
+
+═══ IPDA — INTERBANK PRICE DELIVERY ALGORITHM ═══
+Price is algorithmic. It seeks specific levels in specific sequences.
+
+IPDA LOOK BACK:
+• 20-candle look back: short-term IPDA range
+• 40-candle look back: medium-term IPDA range
+• 60-candle look back: long-term IPDA range
+• Price will draw to the opposing array within the look-back range
+
+IPDA DATA RANGES (on daily chart for bias):
+• Current week's high/low
+• Prior week's high/low
+• Current month's high/low
+• Prior month's high/low
+These levels act as magnets. Price will seek the opposing side after taking one side.
+
+DRAW ON LIQUIDITY:
+• Always ask: where is price GOING, not just where it is
+• Draw = the next significant PD array or liquidity pool price is engineered toward
+• Long trade draw examples: bearish FVG above, prior swing high BSL, PDH
+• Short trade draw examples: bullish FVG below, prior swing low SSL, PDL
+• Never take a trade without knowing your draw — it IS your take profit
+
+═══ OPTIMAL TRADE ENTRY (OTE) ═══
+ICT's highest-probability entry model within a PD array:
+
+FIBONACCI LEVELS FOR OTE:
+• 0.62 (62%) retracement — entry zone begin
+• 0.705 (70.5%) — sweet spot, "the ICT OTE"
+• 0.79 (79%) — entry zone end
+• 1.0 = start of impulse, 0.0 = end of impulse (measure the swing)
+
+OTE SEQUENCE (long example):
+1. Identify HTF bullish bias (price in discount on HTF dealing range)
+2. Price sweeps SSL (sellside liquidity pool)
+3. CHoCH to upside on M1 confirms reversal
+4. Wait for retracement to 62-79% of the initial up-move
+5. Entry at OTE zone, stop below the sweep low
+6. Target: FVG above, prior BSL, or next PD array
+
+OTE RULE: The OTE only works when the larger bias is aligned. Trading OTE counter-trend = low probability.
+
+═══ STANDARD DEVIATION TARGETS ═══
+After a liquidity sweep and reversal, use standard deviations from the sweep to project targets:
+• -1 SD / +1 SD: 1.0 extension from sweep — first target
+• -2 SD / +2 SD: 2.0 extension — optimal full TP
+• -2.5 SD / +2.5 SD: 2.5 extension — extended target if momentum strong
+On NQ M1: 1 SD in NY AM often = 20-50 NQ points depending on volatility
+
+═══ ENTRY MODELS FOR NQ M1 NY AM ═══
+
+MODEL 1 — THE CLASSIC NY AM SWEEP & REVERSE:
+1. Pre-market: identify Asian range high and low
+2. 9:30-9:45: wait for price to sweep Asian low (for long) or Asian high (for short)
+3. Look for M1 CHoCH after the sweep
+4. Enter on retracement to the M1 OB or FVG created by the CHoCH impulse
+5. Stop: below the sweep low (for long) — 2-5 NQ points buffer
+6. Target: Asian range opposite side, then FVG above, then PDH
+
+MODEL 2 — THE OB RETRACEMENT:
+1. Strong displacement move creates M1 OB
+2. CHoCH confirmed
+3. Price retraces to OB (ideally with FVG overlap)
+4. Enter as price touches upper 25% of OB (long) or lower 25% (short)
+5. CE of OB = highest probability reaction candle
+6. Stop: 1-2 points below OB low (long)
+7. Target: next FVG or liquidity above
+
+MODEL 3 — THE FVG FILL ENTRY:
+1. Strong impulse creates a FVG (3-candle imbalance)
+2. Price retraces back INTO the FVG
+3. Enter at CE (50%) of FVG
+4. Stop: below FVG low (long)
+5. Target: the liquidity or PD array that caused the initial impulse
+
+MODEL 4 — THE BREAKER BLOCK:
+1. Identify prior OB that price has already broken through with displacement
+2. That broken OB becomes a Breaker Block
+3. Price returns to test the Breaker Block
+4. Enter as price wicks into the breaker zone
+5. Strongest version: Breaker + FVG + OTE alignment
+
+═══ STOP LOSS PLACEMENT ═══
+WRONG: below/above the entry candle wick
+WRONG: arbitrary points below entry
+CORRECT ICT SL PLACEMENT (long):
+• Below the OB low (not the wick — the candle body low)
+• Below the FVG low
+• Below the liquidity sweep low (the wick that swept SSL)
+• Below the nearest swing low that would invalidate the thesis
+CORRECT ICT SL PLACEMENT (short):
+• Above the OB high
+• Above the FVG high
+• Above the BSL sweep wick high
+ON NQ M1: typical SL = 8-20 NQ points from entry depending on OB size
+
+STOP LOSS MANAGEMENT (TRAILING):
+• Move SL to break-even after price fills the FVG target / reaches 1:1 R:R
+• Trail behind each new OB that forms in the direction of the trade
+• Trail behind each new swing low (long) or swing high (short) after CHoCH confirms continuation
+• Never trail SL into noise — only move to a new structural level
+• Partial exit at 1:1, trail remainder behind next M1 OB
+
+═══ TAKE PROFIT / PARTIAL EXIT STRATEGY ═══
+PARTIAL EXITS (ICT approach):
+• 25-50% at the FVG CE or first PD array (1:1 to 1.5:1 R:R)
+• Move SL to breakeven after first partial
+• Hold remainder to the full draw on liquidity (2:1 to 4:1 R:R)
+
+TP TARGETS IN ORDER:
+1. CE of nearest opposing FVG
+2. Top/bottom of nearest opposing OB
+3. Prior swing high/low (BSL/SSL pool)
+4. Standard deviation extensions (1SD, 2SD)
+5. Previous day high/low
+
+COMMON M1 NQ MISTAKE: closing the full position at the first FVG when there is a clear BSL pool 30-50 points higher — this is the most common "left money on table" scenario.
+
+═══ HIGHER TIMEFRAME BIAS ═══
+NEVER trade M1 without checking HTF first:
+• Daily: is price in premium or discount? Above or below equilibrium?
+• 4H: what is the 4H draw on liquidity?
+• 1H: what is the 1H market structure direction?
+• 15M: what is the most recent 15M CHoCH?
+• M1: entry precision only — direction MUST align with 15M minimum
+
+HTF BIAS ALIGNMENT CHECK:
+• Daily bullish + 4H bullish + 1H bullish + 15M bullish + M1 long = maximum confluence
+• Any misalignment reduces probability
+• Trading M1 against 1H structure = low probability, even with perfect M1 setup
+
+═══ WHAT INVALIDATES A SETUP ═══
+• Close BELOW the OB low (for a long trade)
+• MSS against the trade direction on M5 or higher
+• Price spending more than 3-4 M1 candles inside the OB without bouncing
+• Opposing PD array within 1:1 risk distance (trapped between arrays)
+• High-impact news event during the setup (NFP, FOMC, CPI)
+• Time: setup attempted outside NY AM kill zone without strong HTF alignment
+• Second touch of an OB — lower probability than first touch
+
+═══ NQ-SPECIFIC NOTES ═══
+• NQ (Nasdaq) is the most algorithm-driven index — ICT models work extremely well
+• NQ spreads during NY AM: 0.25 points (1 tick)
+• Average NY AM range: 80-150 NQ points
+• High-volatility days (CPI, FOMC): range can exceed 300 points — widen SL
+• NQ respects M1 OBs and FVGs more consistently than ES during NY AM
+• Round numbers (18000, 18500, 19000) act as major liquidity magnets on NQ
+• VWAP acts as an institutional reference — price often tests VWAP before NY AM continuation
+• Pre-market high/low = major levels — treat as SSL/BSL for NY AM
+
+═══ RED FLAGS — DO NOT TRADE ═══
+• NFP Friday first 30 minutes
+• FOMC decision day during announcement
+• CPI / PPI release during NY AM
+• Low liquidity days (day before/after major holidays)
+• When price is inside a consolidation with no clear swing structure
+• When HTF shows price at a major PD array opposing your direction
+• When the manipulation leg has NOT occurred yet (do not anticipate — wait)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+The trader shares their TradingView screen. Read the chart carefully — identify candles, market structure, OBs, FVGs, liquidity levels, PD arrays, AMD phase, kill zone timing, dealing range position, and draw on liquidity. Cross-reference everything you see against the ICT 2022 model above. Combine visual analysis with their spoken description.
+
+\${learnCtx}`;
+
+
+function getApiKey(){ return localStorage.getItem(API_KEY_STORE) || ''; }
+
+function checkApiKey(){
+  const k = getApiKey();
+  if(k && k.startsWith('sk-ant')){
+    document.getElementById('setup-screen').classList.add('hidden');
+  } else {
+    const su=getSbUrl(),sk=getSbKey();
+    const ue=document.getElementById('sb-url-input'); if(ue&&su) ue.value=su;
+    const ke=document.getElementById('sb-key-input'); if(ke&&sk) ke.value=sk;
+  }
+  initSupabase();
+}
+
+function showSetup(){
+  const el = document.getElementById('setup-screen');
+  el.classList.remove('hidden');
+  const k = getApiKey();
+  if(k) document.getElementById('api-key-input').value = k;
+}
+
+async function saveApiKey(){
+  const input = document.getElementById('api-key-input');
+  const btn   = document.getElementById('setup-save-btn');
+  const err   = document.getElementById('setup-error');
+  // strip ALL whitespace inc newlines — pasted keys often have trailing \n
+  const key = (input.value || '').replace(/[\s\r\n]+/g,'').trim();
+  if(!key || !key.startsWith('sk-ant')){
+    err.textContent = 'Invalid key — must start with sk-ant';
+    err.style.display = 'block'; return;
+  }
+  err.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Verifying key…';
+  try{
+    // test the key BEFORE storing — pass it directly
+    const testRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({model:'claude-sonnet-4-5-20250929',max_tokens:10,system:'Reply only: ok',messages:[{role:'user',content:'ping'}]})
+    });
+    if(!testRes.ok){
+      const b = await testRes.text();
+      // show key preview to help user debug (first 12 + last 4 chars)
+      const preview = key.length > 16 ? key.slice(0,12)+'...'+key.slice(-4) : key;
+      throw new Error('API '+testRes.status+' (key: '+preview+'): '+b.slice(0,120));
+    }
+    localStorage.setItem(API_KEY_STORE, key);
+    // Save Supabase creds if provided
+    var sbUrl = (document.getElementById('sb-url-input')||{}).value||'';
+    var sbKey = (document.getElementById('sb-key-input')||{}).value||'';
+    if(sbUrl.trim()) localStorage.setItem(SB_URL_STORE, sbUrl.trim());
+    if(sbKey.trim()) localStorage.setItem(SB_KEY_STORE, sbKey.trim());
+    initSupabase();
+    if(hasCloud()) syncLocalToCloud();
+
+    document.getElementById('setup-screen').classList.add('hidden');
+    btn.disabled = false; btn.textContent = 'Launch NEO →';
+    if(typeof addSystemMsg === 'function')
+      addSystemMsg('NEO online — share your TradingView screen and press SPACE to begin.');
+  }catch(e){
+    err.textContent = 'Failed: ' + e.message;
+    err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Launch NEO →';
+  }
+}
+
+
+// ── Robust JSON extractor ────────────────────────────────────────────────
+// Handles: raw JSON, ```json blocks, markdown prefix/suffix, any extra text
+function extractJSON(text){
+  if(!text) throw new Error('Empty response from API');
+  if(typeof text === 'object') return text;
+  const str = String(text);
+
+  // Strategy 1: direct parse
+  try{ return JSON.parse(str.trim()); }catch(e){}
+
+  // Strategy 2: extract between first { and last } — handles ANY wrapping
+  const s = str.indexOf('{');
+  const e2 = str.lastIndexOf('}');
+  if(s !== -1 && e2 > s){
+    try{ return JSON.parse(str.slice(s, e2 + 1)); }catch(e){}
+  }
+
+  // Strategy 3: strip all backticks and "json" word then parse
+  const clean = str.replace(/`/g, '').replace(/^\s*json\s*/i,'').trim();
+  try{ return JSON.parse(clean); }catch(e){}
+
+  // Strategy 4: array
+  const as = str.indexOf('['), ae = str.lastIndexOf(']');
+  if(as !== -1 && ae > as){ try{ return JSON.parse(str.slice(as, ae+1)); }catch(e){} }
+
+  // Last resort: try to repair truncated JSON by adding closing braces
+  try{
+    let repaired = str.slice(str.indexOf('{'));
+    // Count unclosed braces and brackets
+    let braces=0, brackets=0;
+    for(const ch of repaired){ if(ch==='{')braces++; else if(ch==='}')braces--; else if(ch==='[')brackets++; else if(ch===']')brackets--; }
+    while(brackets > 0){ repaired += ']'; brackets--; }
+    while(braces > 0){ repaired += '}'; braces--; }
+    return JSON.parse(repaired);
+  }catch(e){}
+
+  throw new Error('Could not parse JSON. Preview: ' + str.slice(0,80));
+}
+
+async function neoFetch(messages, systemPrompt, maxTokens, model){
+  maxTokens = maxTokens || 1000;
+  model = model || MODEL_FAST;
+  const key = getApiKey();
+  if(!key) throw new Error('No API key — click ⚙ to add yours');
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: model,
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: messages
+    })
+  });
+  if(!res.ok){
+    let body = ''; try{ body = await res.text(); }catch(e){}
+    throw new Error('API ' + res.status + ': ' + body.slice(0,140));
+  }
+  const data = await res.json();
+  // Ensure we always return a string — never an object
+  const result = (data.content || []).map(function(b){ return b.text || ''; }).join('');
+  if(typeof result !== 'string') throw new Error('Unexpected API response type: ' + typeof result);
+  return result;
+}
+
+
+function loadTrades()  { try{return JSON.parse(localStorage.getItem(DB_TRADES)||'[]')}catch(e){return[]} }
+function saveTrades(t) { localStorage.setItem(DB_TRADES, JSON.stringify(t)) }
+// ═══════════════════════════════════════════
+//  TAB ROUTING
+// ═══════════════════════════════════════════
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('active',['live','learn'][i]===name);});
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  var pg=document.getElementById('page-'+name);
+  if(pg) pg.classList.add('active');
+  if(name==='learn') renderLearnPage();
+}
+
+// ═══════════════════════════════════════════
+//  SCREEN SHARE
+// ═══════════════════════════════════════════
+async function startShare(){
+  try{
+    mediaStream = await navigator.mediaDevices.getDisplayMedia({
+      video:{ frameRate:5, cursor:'always' }, audio:false
+    });
+    const vid = document.getElementById('sv');
+    vid.srcObject = mediaStream;
+    vid.style.display = 'block';
+    document.getElementById('screen-empty').style.display = 'none';
+    document.getElementById('live-badge').style.display   = 'block';
+    document.getElementById('btn-share').textContent = '📺 Sharing…';
+    mediaStream.getVideoTracks()[0].onended = ()=>{
+      vid.style.display = 'none';
+      document.getElementById('screen-empty').style.display = 'flex';
+      document.getElementById('live-badge').style.display   = 'none';
+      document.getElementById('btn-share').textContent = '📺 Share screen';
+      mediaStream = null;
+    };
+  }catch(e){ console.warn('Screen share cancelled'); }
+}
+
+function captureFrame(){
+  const vid=document.getElementById('sv');
+  if(!vid||!mediaStream||vid.readyState<2) return null;
+  const canvas=document.getElementById('sc');
+  canvas.width=vid.videoWidth||1280; canvas.height=vid.videoHeight||720;
+  canvas.getContext('2d').drawImage(vid,0,0,canvas.width,canvas.height);
+  const f=document.getElementById('scan-anim');
+  f.classList.add('flash'); setTimeout(()=>f.classList.remove('flash'),200);
+  return canvas.toDataURL('image/jpeg',.75);
+}
+
+// ═══════════════════════════════════════════
+//  VOICE
+// ═══════════════════════════════════════════
+// ── NEO VOICE ENGINE ──────────────────────────────────────────────────
+// Single recognition instance started ONCE. Never stopped.
+// Chrome only asks permission for the very first .start() call.
+// After that, we just toggle isListening to capture/ignore input.
+// ──────────────────────────────────────────────────────────────────────
+let neoRecStarted = false;
+
+// ══════════════════════════════════════════════════════════════
+//  NEO VOICE ENGINE v3 — MediaRecorder + Whisper API
+//  No Web Speech API. Records audio blob, sends to Whisper.
+//  TTS via native Windows SAPI through Electron IPC.
+// ══════════════════════════════════════════════════════════════
+let mediaRecorder  = null;
+let audioChunks    = [];
+let micStream = null;
+
+
+// ══════════════════════════════════════════════════════════
+//  NEO HOTKEY TRIGGER — F1 Long · F2 Short
+//  Press before entering trade — NEO grabs screen + analyses
+// ══════════════════════════════════════════════════════════
+function setHkStatus(msg, cls){
+  const el = document.getElementById('hk-status');
+  if(!el) return;
+  el.textContent = msg;
+  el.className = 'hk-status' + (cls ? ' '+cls : '');
+}
+
+async function triggerAnalysis(direction){
+  console.log('[NEO] triggerAnalysis called:', direction, '| isThinking:', isThinking);
+
+  // Auto-reset if stuck (shouldn't happen but belt-and-braces)
+  if(isThinking){
+    setHkStatus('Resetting…', '');
+    isThinking = false;
+    const stuck = document.getElementById(direction==='long'?'hk-long':'hk-short');
+    if(stuck) stuck.classList.remove('busy');
+    return;
+  }
+
+  // Check API key first — most common reason for silent failure
+  if(!getApiKey()){
+    removeEmpty();
+    addErrorBubble('No API key. Click ⚙ in the top bar to enter your Anthropic API key.');
+    setHkStatus('No API key — click ⚙', 'error');
+    return;
+  }
+
+  // Flash button
+  const btnId = direction==='long' ? 'hk-long' : 'hk-short';
+  const btn = document.getElementById(btnId);
+  if(btn){ btn.classList.add('firing','busy'); setTimeout(()=>btn.classList.remove('firing'),500); }
+
+  // Capture screen — REQUIRED
+  const frame = captureFrame();
+  console.log('[NEO] captureFrame result:', frame ? 'got frame (' + frame.length + ' chars)' : 'null — no screen shared');
+  if(!frame){
+    removeEmpty();
+    addErrorBubble('No screen shared. Click 📺 Share Screen first, then pick your TradingView window.');
+    setHkStatus('Share your screen first', 'error');
+    if(btn) btn.classList.remove('busy');
+    return;
+  }
+  setHkStatus('Reading chart…', 'thinking');
+  removeEmpty();
+  const loadId = addLoadingBubble();
+  isThinking = true;
+
+  const dirLabel = direction==='long' ? 'LONG' : 'SHORT';
+  const dirEmoji = direction==='long' ? '▲' : '▼';
+  const oppDir   = direction==='long' ? 'bearish' : 'bullish';
+
+  const learnCtx = buildLearningContext();
+
+  const sys = ICT_KB + `
+
+You are NEO, an elite ICT 2022 NQ futures analyst, 1-minute chart specialist.
+IMPORTANT: Do NOT skip or penalise setups based on time of day — judge purely on ICT confluence quality.
+The trader pressed the ${dirEmoji} ${dirLabel} hotkey — they are about to enter a ${dirLabel} trade.
+Look for ${direction==='long'?'bullish':'bearish'} ICT confluences. Flag any ${oppDir} opposing arrays.
+
+${learnCtx}
+
+CRITICAL: Output ONLY a raw JSON object. No backticks. No code fences. No markdown. Start with { end with }. Nothing else. Keep all note fields to 5 words maximum to stay within token limits.
+{
+  "verdict":"TAKE IT"|"SKIP IT"|"WAIT",
+  "verdict_class":"take"|"skip"|"wait",
+  "confidence_pct":<0-100, based on visible confluences and historical patterns>,
+  "confluence_score":<0-7>,
+  "confluences":[
+    {"name":"Order Block","status":"yes"|"no"|"partial","note":"<5 words>"},
+    {"name":"Fair Value Gap","status":"yes"|"no"|"partial","note":"<5 words>"},
+    {"name":"Liquidity Sweep","status":"yes"|"no"|"partial","note":"<5 words>"},
+    {"name":"MSS / CHoCH","status":"yes"|"no"|"partial","note":"<5 words>"},
+    {"name":"PD Array","status":"yes"|"no"|"partial","note":"<5 words>"},
+    {"name":"HTF Bias","status":"yes"|"no"|"partial","note":"<5 words>"},
+    {"name":"NY AM Session","status":"yes"|"no"|"partial","note":"<5 words>"}
+  ],
+  "warnings":[{"type":"pattern"|"pd"|"learn"|"info","text":"<warning>"}],
+  "opposing_pd_arrays":"<describe opposing arrays or none>",
+  "suggested_entry":"<price>",
+  "suggested_sl":"<price — tight, just below/above OB or FVG>",
+  "suggested_tp":"<price — next PD array in trade direction>",
+  "rr":"<e.g. 3.2:1>",
+  "rr_class":"good"|"warn"|"bad",
+  "reasoning":"<2-3 sentences: what you see, why verdict, specific ICT levels>",
+  "key_risk":"<single biggest threat to this trade>",
+  "detected_setup":"<one-line e.g. OB+FVG Long after SSL sweep>",
+  "detected_confluences_list":["Order Block","Liquidity Sweep"]
+}`;
+
+  const msgContent = [
+    {type:'image', source:{type:'base64', media_type:'image/jpeg', data:frame.split(',')[1]}},
+    {type:'text',  text:'Direction: ' + dirEmoji + ' ' + dirLabel + '. Analyse this NQ M1 NY AM chart for an ICT ' + direction + ' setup. Read every visible ICT structure.'}
+  ];
+  convHistory.push({role:'user', content:msgContent});
+  setHkStatus('NEO reading chart…', 'thinking');
+
+  try{
+    console.log('[NEO] Calling API…');
+    const text = await neoFetch(convHistory, sys, 1200, MODEL_LIVE);
+    convHistory.push({role:'assistant', content:text});
+    const data = extractJSON(text);
+    data.direction = direction;
+    removeLoading(loadId);
+    renderResponse(dirEmoji + ' ' + dirLabel, data, frame);
+    const statusTxt = data.verdict + ' · ' + data.confidence_pct + '% · ' + (data.rr||'');
+    setHkStatus(statusTxt, direction==='long' ? 'done-long' : 'done-short');
+    const warn = (data.warnings||[]).length ? '. Warning: ' + data.warnings[0].text : '';
+    neoSpeak(data.verdict + '. Confidence ' + data.confidence_pct + ' percent.' + warn);
+    if(data.verdict_class==='take'){
+      openInTrade({direction, entry:data.suggested_entry, sl:data.suggested_sl, tp:data.suggested_tp, rr:data.rr});
+    }
+  }catch(err){
+    console.error('[NEO] Analysis error:', err.message);
+    removeLoading(loadId);
+    addErrorBubble(err.message, typeof text !== 'undefined' ? text : null);
+    convHistory.pop();
+    setHkStatus('Error: ' + err.message.slice(0,60), 'error');
+  }
+  isThinking = false;
+  if(btn) btn.classList.remove('busy');
+  console.log('[NEO] triggerAnalysis complete. isThinking reset to false.');
+}
+
+// Hotkey listener — uses customisable hotkeys (default F1/F2)
+document.addEventListener('keydown', e=>{
+  if(['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) return;
+  if(document.getElementById('hk-modal').classList.contains('open')) return;
+  const k = e.key === ' ' ? 'Space' : e.key;
+  if(k === hotkeys.long){  e.preventDefault(); triggerAnalysis('long');  }
+  if(k === hotkeys.short){ e.preventDefault(); triggerAnalysis('short'); }
+});
+
+
+// ══════════════════════════════════════════════════════════
+//  HOTKEY SETTINGS — customisable keys stored in localStorage
+// ══════════════════════════════════════════════════════════
+const HK_STORE = 'neo_hotkeys_v1';
+
+function loadHotkeys(){
+  try{ return JSON.parse(localStorage.getItem(HK_STORE)) || {long:'F1', short:'F2'}; }
+  catch(e){ return {long:'F1', short:'F2'}; }
+}
+
+function saveHotkeyStore(keys){
+  localStorage.setItem(HK_STORE, JSON.stringify(keys));
+}
+
+// Current active hotkeys
+let hotkeys = loadHotkeys();
+
+// Temp keys being configured in modal
+let pendingKeys = {long:'F1', short:'F2'};
+let capturingFor = null; // 'long' or 'short'
+
+function openHkSettings(){
+  pendingKeys = Object.assign({}, hotkeys);
+  document.getElementById('hk-long-btn').textContent  = pendingKeys.long;
+  document.getElementById('hk-short-btn').textContent = pendingKeys.short;
+  document.getElementById('hk-long-btn').classList.remove('waiting');
+  document.getElementById('hk-short-btn').classList.remove('waiting');
+  capturingFor = null;
+  document.getElementById('hk-modal').classList.add('open');
+}
+
+function closeHkSettings(){
+  capturingFor = null;
+  document.getElementById('hk-modal').classList.remove('open');
+}
+
+function startCapture(which){
+  capturingFor = which;
+  const btn = document.getElementById('hk-'+which+'-btn');
+  btn.textContent = 'Press any key…';
+  btn.classList.add('waiting');
+  // Other button back to normal
+  const other = which==='long'?'short':'long';
+  document.getElementById('hk-'+other+'-btn').classList.remove('waiting');
+  document.getElementById('hk-'+other+'-btn').textContent = pendingKeys[other];
+}
+
+function saveHkSettings(){
+  hotkeys = Object.assign({}, pendingKeys);
+  saveHotkeyStore(hotkeys);
+  // Update key labels on main buttons
+  document.querySelector('#hk-long  .hk-key').textContent  = hotkeys.long;
+  document.querySelector('#hk-short .hk-key').textContent  = hotkeys.short;
+  closeHkSettings();
+  setHkStatus('Hotkeys saved: ' + hotkeys.long + ' = Long · ' + hotkeys.short + ' = Short', '');
+  setTimeout(()=>setHkStatus('Ready — ' + hotkeys.long + ' for long · ' + hotkeys.short + ' for short', ''), 3000);
+}
+
+// Listen for key capture inside modal
+document.addEventListener('keydown', e=>{
+  // Settings modal capture mode
+  if(capturingFor && document.getElementById('hk-modal').classList.contains('open')){
+    e.preventDefault();
+    e.stopPropagation();
+    const label = e.key === ' ' ? 'Space' : e.key;
+    pendingKeys[capturingFor] = label;
+    document.getElementById('hk-'+capturingFor+'-btn').textContent = label;
+    document.getElementById('hk-'+capturingFor+'-btn').classList.remove('waiting');
+    capturingFor = null;
+    return;
+  }
+  // Escape closes modal
+  if(e.key==='Escape' && document.getElementById('hk-modal').classList.contains('open')){
+    closeHkSettings(); return;
+  }
+});
+
+// Apply saved hotkeys on load
+function applyHotkeys(){
+  hotkeys = loadHotkeys();
+  const lBtn = document.querySelector('#hk-long  .hk-key');
+  const sBtn = document.querySelector('#hk-short .hk-key');
+  if(lBtn) lBtn.textContent = hotkeys.long;
+  if(sBtn) sBtn.textContent = hotkeys.short;
+  setHkStatus('Ready — ' + hotkeys.long + ' for long · ' + hotkeys.short + ' for short', '');
+}
+
+async function setupSpeech(){
+  // Web app — mic not used (hotkey F1/F2 triggers analysis via screen capture)
+  // No mic setup needed
+}
+
+function startListening(){
+  if(isThinking || !micStream) return;
+  if(mediaRecorder && mediaRecorder.state === 'recording') return;
+
+  isListening    = true;
+  audioChunks    = [];
+  accumulatedTranscript = '';
+
+  const el = document.getElementById('trans-text');
+  el.textContent = 'Recording… click mic or SPACE again to send';
+  el.classList.remove('ph');
+  setMicState('on');
+
+  try{
+    mediaRecorder = new MediaRecorder(micStream, { mimeType: 'audio/webm;codecs=opus' });
+  }catch(e){
+    // Fallback mime type
+    mediaRecorder = new MediaRecorder(micStream);
+  }
+
+  mediaRecorder.ondataavailable = e => {
+    if(e.data && e.data.size > 0) audioChunks.push(e.data);
+  };
+
+  mediaRecorder.onstop = async () => {
+    if(!isListening && audioChunks.length > 0){
+      setMicState('thinking');
+      const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+      audioChunks = [];
+      await transcribeAndSend(blob);
+    }
+  };
+
+  mediaRecorder.start(250); // collect chunks every 250ms
+}
+
+function stopAndSend(){
+  if(!mediaRecorder || mediaRecorder.state !== 'recording') return;
+  isListening = false;
+  mediaRecorder.stop(); // triggers onstop -> transcribeAndSend
+}
+
+async function transcribeAndSend(audioBlob){
+  // Voice input removed — use F1/F2 hotkeys instead
+  setMicState('idle');
+}
+
+function showTextFallback(){
+  const existing = document.getElementById('text-fallback');
+  if(existing){ existing.focus(); return; }
+  const input = document.createElement('input');
+  input.id          = 'text-fallback';
+  input.type        = 'text';
+  input.placeholder = 'Type your setup here and press Enter…';
+  input.style.cssText = 'position:fixed;bottom:170px;left:50%;transform:translateX(-50%);width:500px;background:var(--s2);border:1px solid var(--blue);border-radius:var(--r);color:var(--tx);font-family:var(--mono);font-size:13px;padding:10px 14px;z-index:100;outline:none';
+  input.onkeydown = e => {
+    if(e.key === 'Enter' && input.value.trim()){
+      const txt = input.value.trim();
+      input.remove();
+      document.getElementById('trans-text').textContent = txt;
+      if(inTradeActive) sendMgmt(txt);
+      else analyse(txt);
+    }
+    if(e.key === 'Escape') input.remove();
+  };
+  document.body.appendChild(input);
+  input.focus();
+}
+
+function getOpenAIKey(){
+  return localStorage.getItem('neo_openai_key') || '';
+}
+
+function buildRecognitionEngine(){ return null; } // stub — not used
+
+
+function toggleMic(){
+  if(isThinking) return;
+  if(isListening) stopAndSend();
+  else startListening();
+}
+
+// Type-to-send fallback — works even if mic fails
+function submitTyped(txt){
+  if(!txt || !txt.trim() || isThinking) return;
+  const el = document.getElementById('type-input');
+  if(el) el.value = '';
+  document.getElementById('trans-text').textContent = txt.trim();
+  document.getElementById('trans-text').classList.remove('ph');
+  removeEmpty();
+  setMicState('thinking');
+  if(inTradeActive) sendMgmt(txt.trim());
+  else analyse(txt.trim());
+}
+
+// [removed duplicate startListening]
+
+// [removed duplicate stopAndSend]
+
+function stopListening(){ isListening=false; setMicState("idle"); }
+function setMicState(s){
+  const btn=document.getElementById('mic-btn');
+  const lbl=document.getElementById('mic-label');
+  const sta=document.getElementById('mic-status');
+  const wave=document.getElementById('wave');
+  btn.className='mic-btn'; wave.classList.remove('on');
+  if(s==='on'){btn.classList.add('on');lbl.textContent='LISTENING';sta.textContent='speak now…';wave.classList.add('on')}
+  else if(s==='thinking'){btn.classList.add('thinking');lbl.textContent='THINKING';sta.textContent='analysing chart…'}
+  else{lbl.textContent='CLICK MIC';sta.textContent='idle'}
+}
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&!e.repeat&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){
+    e.preventDefault();
+    if(isListening) stopAndSend();
+    else startListening();
+  }
+});
+
+function buildLearningContext(){
+  if(!learnData||!learnData.length) return '';
+  var wins=learnData.filter(function(e){return e.outcome==='win';});
+  var losses=learnData.filter(function(e){return e.outcome==='loss';});
+  var allC={};
+  learnData.forEach(function(e){
+    (e.concepts||[]).forEach(function(c){
+      if(!allC[c])allC[c]={w:0,l:0};
+      if(e.outcome==='win')allC[c].w++; else if(e.outcome==='loss')allC[c].l++;
+    });
+  });
+  var ctx='PATTERN MEMORY: '+learnData.length+' trades ('+wins.length+'W/'+losses.length+'L).\n';
+  var top=Object.entries(allC).filter(function(kv){return kv[1].w+kv[1].l>=2;}).sort(function(a,b){return(b[1].w-b[1].l)-(a[1].w-a[1].l);}).slice(0,5);
+  if(top.length) ctx+='High-probability: '+top.map(function(kv){return kv[0]+' '+Math.round(kv[1].w/(kv[1].w+kv[1].l)*100)+'%';}).join(', ')+'\n';
+  var rl=losses.slice(-3).filter(function(e){return e.note&&e.outcome==='loss';}).map(function(e){return e.note;}).join('; ');
+  if(rl) ctx+='Recent loss patterns: '+rl+'\n';
+  return ctx;
+}
+
+// ═══════════════════════════════════════════
+//  LIVE ANALYSE
+// ═══════════════════════════════════════════
+async function analyse(transcript){
+  if(isThinking) return;
+  isThinking=true; setMicState('thinking');
+  const frame=captureFrame();
+  const learnCtx=buildLearningContext();
+  removeEmpty();
+  const loadId=addLoadingBubble();
+
+  const msgContent=[];
+  if(frame) msgContent.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:frame.split(',')[1]}});
+  msgContent.push({type:'text',text:transcript});
+  convHistory.push({role:'user',content:msgContent});
+
+  const sys=`You are an elite ICT 2022 NQ futures analyst for 1-minute charts, NY AM kill zone specialist. You have been trained on the complete ICT 2022 model as defined below.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ICT 2022 MODEL — COMPLETE KNOWLEDGE BASE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+═══ CORE PHILOSOPHY ═══
+Smart money (banks/institutions) cannot fill orders at a single price — they need liquidity.
+Price is engineered to reach liquidity pools, fill institutional orders, then reverse.
+Retail traders are the liquidity. Their stop losses are the fuel for institutional entries.
+Every candle, every move has a purpose: to either reach liquidity or deliver price to a PD array.
+
+═══ TIME — THE MOST IMPORTANT VARIABLE ═══
+ICT trades are TIME-based first, then price. Setups only qualify during specific kill zones.
+
+KILL ZONES (all times EST):
+• Asian Session: 8:00 PM – 12:00 AM — range building, liquidity engineering
+• London Open Kill Zone: 2:00 AM – 5:00 AM — highest probability reversals
+• NY AM Kill Zone: 8:30 AM – 11:00 AM — PRIMARY session, best NQ setups
+• NY Lunch: 12:00 PM – 1:00 PM — avoid, choppy, low probability
+• NY PM Kill Zone: 1:30 PM – 4:00 PM — secondary, lower probability than AM
+
+NY AM KILL ZONE (primary focus for this bot):
+• 9:30 open is the single most important moment of the day
+• First 30 minutes often create a manipulation move (the fake)
+• True directional move begins after the manipulation leg is complete
+• ICT: "The market will seek liquidity before it seeks to deliver price"
+• Watch for sweep of Asian range highs or lows in the first 15-30 mins of NY AM
+
+POWER OF 3 (AMD Model — Accumulation, Manipulation, Distribution):
+• Accumulation: Smart money builds position quietly (Asian session / pre-market)
+• Manipulation: Price spikes AGAINST the true direction to grab liquidity (stop hunt)
+• Distribution: Price delivers in the true direction after manipulation complete
+• On M1 during NY AM: AMD can play out in as little as 15-30 minutes
+• Never trade the Accumulation or Manipulation legs — only the Distribution
+
+OPTIMAL TIME FOR M1 ENTRIES:
+• 9:30-9:50 AM: Manipulation sweep of overnight range / Asian high or low
+• 9:50-10:30 AM: Distribution leg begins — highest probability M1 entries
+• 10:30-11:00 AM: Extension to next PD array, possible partials zone
+
+═══ MARKET STRUCTURE ═══
+SWING HIGH/LOW CLASSIFICATION:
+• Swing High: candle with lower highs on both sides (3-bar minimum)
+• Swing Low: candle with higher lows on both sides
+• Internal swing: smaller structure within a larger range
+• External swing: the major swing points that define the dealing range
+
+BREAK OF STRUCTURE (BOS):
+• Price closes beyond a prior swing high (bullish BOS) or swing low (bearish BOS)
+• BOS = continuation signal, same direction as prior move
+• Only valid when it occurs after a pullback to a PD array
+• False BOS = engineered liquidity grab, often signals reversal
+
+CHANGE OF CHARACTER (CHoCH) / MARKET STRUCTURE SHIFT (MSS):
+• CHoCH: first sign of a potential reversal — closes beyond the most recent internal swing
+• MSS: confirmed when price closes beyond a significant external swing in the opposite direction
+• CHoCH on M1 during NY AM = entry trigger for distribution leg
+• MSS after liquidity sweep = highest probability entry signal in the 2022 model
+• Sequence for long: price sweeps sellside liquidity → CHoCH to the upside → entry on retracement to OB/FVG
+
+DEALING RANGE:
+• Defined by the most recent swing high and swing low
+• Premium zone: upper 50% of range — ideal for shorts
+• Equilibrium (EQ): 50% of range (0.50 Fibonacci)
+• Discount zone: lower 50% of range — ideal for longs
+• Rule: only buy in discount, only sell in premium (relative to HTF dealing range)
+• M1 application: identify the NY AM dealing range from the first 15 min, trade from extremes
+
+═══ PD ARRAYS (Premium/Discount Arrays) — IN ORDER OF STRENGTH ═══
+PD arrays are the specific price levels where smart money places orders.
+Listed strongest to weakest:
+
+BULLISH PD ARRAYS (buy from these when in discount):
+1. Breaker Block — former bearish OB that price broke through, now acts as support
+2. Bullish Order Block (OB) — last down-close candle before a bullish impulse
+3. Bullish Mitigation Block — area where failed swing low was created
+4. Bullish Fair Value Gap (FVG / IFVG) — three-candle imbalance, gap between candle[0] high and candle[2] low
+5. Bullish Void — single large up candle with no overlap
+6. Strong High — a high that caused significant displacement
+
+BEARISH PD ARRAYS (sell from these when in premium):
+1. Breaker Block — former bullish OB that price broke through, now acts as resistance
+2. Bearish Order Block (OB) — last up-close candle before a bearish impulse
+3. Bearish Mitigation Block — area where failed swing high was created
+4. Bearish Fair Value Gap (FVG) — three-candle imbalance, gap between candle[0] low and candle[2] high
+5. Bearish Void — single large down candle with no overlap
+6. Strong Low — a low that caused significant displacement
+
+═══ ORDER BLOCKS (OB) — DETAILED ═══
+BULLISH ORDER BLOCK:
+• The last red (bearish) candle in a down move BEFORE a strong bullish displacement
+• Must be followed by at least 3 bullish candles or a strong impulse away
+• Best OBs: in discount zone, after a liquidity sweep, on M1/M5 aligned with HTF
+• Entry: price retraces INTO the OB (ideally the upper 25% — the "breaker" portion)
+• Invalidation: price closes below the OB low
+• On M1: OBs from the 5-15 min range before NY open are extremely powerful
+
+BEARISH ORDER BLOCK:
+• The last green (bullish) candle in an up move BEFORE a strong bearish displacement
+• Must be followed by at least 3 bearish candles or a strong impulse away
+• Best OBs: in premium zone, after a liquidity sweep, after CHoCH
+• Entry: price retraces INTO the OB (ideally lower 25%)
+• Invalidation: price closes above the OB high
+
+OB REFINEMENT (ICT 2022):
+• Use the 50% level of the OB as the "consequent encroachment" — key reaction point
+• OB + FVG overlap = "OB sandwich" — extremely high probability
+• Old OBs (multiple touches) lose strength — prefer virgin OBs (untouched)
+• M1 OBs are valid during kill zones only — same OB outside kill zone = lower probability
+
+═══ FAIR VALUE GAPS (FVG) ═══
+DEFINITION: Three consecutive candles where candle[1]'s body creates a gap between candle[0]'s high and candle[2]'s low (bullish) or candle[0]'s low and candle[2]'s high (bearish).
+
+BULLISH FVG: candle[0] high < candle[2] low — imbalance, price wants to fill it
+BEARISH FVG: candle[0] low > candle[2] high — imbalance, price wants to fill it
+
+FVG TYPES:
+• SIBI (Sellside Imbalance Buyside Inefficiency) — bullish FVG created during up move
+• BISI (Buyside Imbalance Sellside Inefficiency) — bearish FVG created during down move
+
+FVG KEY RULES:
+• Consequent Encroachment (CE): the 50% level of the FVG — strongest reaction point
+• First touch of FVG is highest probability — each subsequent touch weakens it
+• FVG above current price = draw on liquidity for longs (target)
+• FVG below current price = draw on liquidity for shorts (target)
+• Overlapping FVGs (stacked) = very strong level
+• FVG that overlaps an OB = extremely high confluence entry zone
+
+ICT 2022 FVG RULE: Price will always return to fill at least 50% of every FVG eventually.
+Use unfilled FVGs above/below as targets. Never fight price when it is filling a FVG.
+
+═══ LIQUIDITY — THE ENGINE OF PRICE ═══
+LIQUIDITY POOLS (where stops cluster):
+• Equal highs (EQH): two or more highs at similar levels — BSL (Buyside Liquidity)
+• Equal lows (EQL): two or more lows at similar levels — SSL (Sellside Liquidity)
+• Previous day high (PDH) — major BSL
+• Previous day low (PDL) — major SSL
+• Previous week high/low — HTF liquidity
+• Asian session high/low — primary NY AM liquidity targets
+• Swing highs/lows — obvious stop clusters
+• Round numbers (18000, 18500 on NQ) — psychological stops
+
+LIQUIDITY SWEEP MECHANICS:
+• BSL sweep: wick above equal highs / prior swing high, then closes back below — bearish signal
+• SSL sweep: wick below equal lows / prior swing low, then closes back above — bullish signal
+• Sweep must be followed by CHoCH to confirm reversal — sweep alone is not an entry
+• "Turtle Soup": classic retail setup fade — price sweeps obvious liquidity then reverses hard
+• M1 application: watch for sweep of Asian low in first 15 mins of NY AM → long setup
+
+STOP HUNT CHARACTERISTICS:
+• Usually occurs as a single aggressive wick candle (1-3 bars on M1)
+• Volume spike on the sweep candle
+• Immediate close back through the liquidity level
+• Sets up the highest probability ICT entries
+
+═══ IPDA — INTERBANK PRICE DELIVERY ALGORITHM ═══
+Price is algorithmic. It seeks specific levels in specific sequences.
+
+IPDA LOOK BACK:
+• 20-candle look back: short-term IPDA range
+• 40-candle look back: medium-term IPDA range
+• 60-candle look back: long-term IPDA range
+• Price will draw to the opposing array within the look-back range
+
+IPDA DATA RANGES (on daily chart for bias):
+• Current week's high/low
+• Prior week's high/low
+• Current month's high/low
+• Prior month's high/low
+These levels act as magnets. Price will seek the opposing side after taking one side.
+
+DRAW ON LIQUIDITY:
+• Always ask: where is price GOING, not just where it is
+• Draw = the next significant PD array or liquidity pool price is engineered toward
+• Long trade draw examples: bearish FVG above, prior swing high BSL, PDH
+• Short trade draw examples: bullish FVG below, prior swing low SSL, PDL
+• Never take a trade without knowing your draw — it IS your take profit
+
+═══ OPTIMAL TRADE ENTRY (OTE) ═══
+ICT's highest-probability entry model within a PD array:
+
+FIBONACCI LEVELS FOR OTE:
+• 0.62 (62%) retracement — entry zone begin
+• 0.705 (70.5%) — sweet spot, "the ICT OTE"
+• 0.79 (79%) — entry zone end
+• 1.0 = start of impulse, 0.0 = end of impulse (measure the swing)
+
+OTE SEQUENCE (long example):
+1. Identify HTF bullish bias (price in discount on HTF dealing range)
+2. Price sweeps SSL (sellside liquidity pool)
+3. CHoCH to upside on M1 confirms reversal
+4. Wait for retracement to 62-79% of the initial up-move
+5. Entry at OTE zone, stop below the sweep low
+6. Target: FVG above, prior BSL, or next PD array
+
+OTE RULE: The OTE only works when the larger bias is aligned. Trading OTE counter-trend = low probability.
+
+═══ STANDARD DEVIATION TARGETS ═══
+After a liquidity sweep and reversal, use standard deviations from the sweep to project targets:
+• -1 SD / +1 SD: 1.0 extension from sweep — first target
+• -2 SD / +2 SD: 2.0 extension — optimal full TP
+• -2.5 SD / +2.5 SD: 2.5 extension — extended target if momentum strong
+On NQ M1: 1 SD in NY AM often = 20-50 NQ points depending on volatility
+
+═══ ENTRY MODELS FOR NQ M1 NY AM ═══
+
+MODEL 1 — THE CLASSIC NY AM SWEEP & REVERSE:
+1. Pre-market: identify Asian range high and low
+2. 9:30-9:45: wait for price to sweep Asian low (for long) or Asian high (for short)
+3. Look for M1 CHoCH after the sweep
+4. Enter on retracement to the M1 OB or FVG created by the CHoCH impulse
+5. Stop: below the sweep low (for long) — 2-5 NQ points buffer
+6. Target: Asian range opposite side, then FVG above, then PDH
+
+MODEL 2 — THE OB RETRACEMENT:
+1. Strong displacement move creates M1 OB
+2. CHoCH confirmed
+3. Price retraces to OB (ideally with FVG overlap)
+4. Enter as price touches upper 25% of OB (long) or lower 25% (short)
+5. CE of OB = highest probability reaction candle
+6. Stop: 1-2 points below OB low (long)
+7. Target: next FVG or liquidity above
+
+MODEL 3 — THE FVG FILL ENTRY:
+1. Strong impulse creates a FVG (3-candle imbalance)
+2. Price retraces back INTO the FVG
+3. Enter at CE (50%) of FVG
+4. Stop: below FVG low (long)
+5. Target: the liquidity or PD array that caused the initial impulse
+
+MODEL 4 — THE BREAKER BLOCK:
+1. Identify prior OB that price has already broken through with displacement
+2. That broken OB becomes a Breaker Block
+3. Price returns to test the Breaker Block
+4. Enter as price wicks into the breaker zone
+5. Strongest version: Breaker + FVG + OTE alignment
+
+═══ STOP LOSS PLACEMENT ═══
+WRONG: below/above the entry candle wick
+WRONG: arbitrary points below entry
+CORRECT ICT SL PLACEMENT (long):
+• Below the OB low (not the wick — the candle body low)
+• Below the FVG low
+• Below the liquidity sweep low (the wick that swept SSL)
+• Below the nearest swing low that would invalidate the thesis
+CORRECT ICT SL PLACEMENT (short):
+• Above the OB high
+• Above the FVG high
+• Above the BSL sweep wick high
+ON NQ M1: typical SL = 8-20 NQ points from entry depending on OB size
+
+STOP LOSS MANAGEMENT (TRAILING):
+• Move SL to break-even after price fills the FVG target / reaches 1:1 R:R
+• Trail behind each new OB that forms in the direction of the trade
+• Trail behind each new swing low (long) or swing high (short) after CHoCH confirms continuation
+• Never trail SL into noise — only move to a new structural level
+• Partial exit at 1:1, trail remainder behind next M1 OB
+
+═══ TAKE PROFIT / PARTIAL EXIT STRATEGY ═══
+PARTIAL EXITS (ICT approach):
+• 25-50% at the FVG CE or first PD array (1:1 to 1.5:1 R:R)
+• Move SL to breakeven after first partial
+• Hold remainder to the full draw on liquidity (2:1 to 4:1 R:R)
+
+TP TARGETS IN ORDER:
+1. CE of nearest opposing FVG
+2. Top/bottom of nearest opposing OB
+3. Prior swing high/low (BSL/SSL pool)
+4. Standard deviation extensions (1SD, 2SD)
+5. Previous day high/low
+
+COMMON M1 NQ MISTAKE: closing the full position at the first FVG when there is a clear BSL pool 30-50 points higher — this is the most common "left money on table" scenario.
+
+═══ HIGHER TIMEFRAME BIAS ═══
+NEVER trade M1 without checking HTF first:
+• Daily: is price in premium or discount? Above or below equilibrium?
+• 4H: what is the 4H draw on liquidity?
+• 1H: what is the 1H market structure direction?
+• 15M: what is the most recent 15M CHoCH?
+• M1: entry precision only — direction MUST align with 15M minimum
+
+HTF BIAS ALIGNMENT CHECK:
+• Daily bullish + 4H bullish + 1H bullish + 15M bullish + M1 long = maximum confluence
+• Any misalignment reduces probability
+• Trading M1 against 1H structure = low probability, even with perfect M1 setup
+
+═══ WHAT INVALIDATES A SETUP ═══
+• Close BELOW the OB low (for a long trade)
+• MSS against the trade direction on M5 or higher
+• Price spending more than 3-4 M1 candles inside the OB without bouncing
+• Opposing PD array within 1:1 risk distance (trapped between arrays)
+• High-impact news event during the setup (NFP, FOMC, CPI)
+• Time: setup attempted outside NY AM kill zone without strong HTF alignment
+• Second touch of an OB — lower probability than first touch
+
+═══ NQ-SPECIFIC NOTES ═══
+• NQ (Nasdaq) is the most algorithm-driven index — ICT models work extremely well
+• NQ spreads during NY AM: 0.25 points (1 tick)
+• Average NY AM range: 80-150 NQ points
+• High-volatility days (CPI, FOMC): range can exceed 300 points — widen SL
+• NQ respects M1 OBs and FVGs more consistently than ES during NY AM
+• Round numbers (18000, 18500, 19000) act as major liquidity magnets on NQ
+• VWAP acts as an institutional reference — price often tests VWAP before NY AM continuation
+• Pre-market high/low = major levels — treat as SSL/BSL for NY AM
+
+═══ RED FLAGS — DO NOT TRADE ═══
+• NFP Friday first 30 minutes
+• FOMC decision day during announcement
+• CPI / PPI release during NY AM
+• Low liquidity days (day before/after major holidays)
+• When price is inside a consolidation with no clear swing structure
+• When HTF shows price at a major PD array opposing your direction
+• When the manipulation leg has NOT occurred yet (do not anticipate — wait)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+The trader shares their TradingView screen. Read the chart carefully — identify candles, market structure, OBs, FVGs, liquidity levels, PD arrays, AMD phase, kill zone timing, dealing range position, and draw on liquidity. Cross-reference everything you see against the ICT 2022 model above. Combine visual analysis with their spoken description.
+
+${learnCtx}
+
+USE THE HISTORICAL DATA ABOVE to:
+1. Calibrate confidence_pct based on similar past setups
+2. Issue PATTERN WARNINGS if this setup resembles past losing trades
+3. Flag opposing PD arrays visible on the chart
+4. Reference specific lessons from past screenshots if relevant
+
+CRITICAL: Output ONLY a raw JSON object. No backticks. No code fences. No markdown. Start with { end with }. Nothing else. Keep all note fields to 5 words maximum to stay within token limits.
+{
+  "verdict":"TAKE IT"|"SKIP IT"|"WAIT",
+  "verdict_class":"take"|"skip"|"wait",
+  "confidence_pct":<0-100>,
+  "confluence_score":<0-7>,
+  "confluences":[
+    {"name":"Order Block","status":"yes"|"no"|"partial","note":"<5 words>"},
+    {"name":"Fair Value Gap","status":"yes"|"no"|"partial","note":"<5 words>"},
+    {"name":"Liquidity Sweep","status":"yes"|"no"|"partial","note":"<5 words>"},
+    {"name":"MSS / CHoCH","status":"yes"|"no"|"partial","note":"<5 words>"},
+    {"name":"PD Array","status":"yes"|"no"|"partial","note":"<5 words>"},
+    {"name":"HTF Bias","status":"yes"|"no"|"partial","note":"<5 words>"},
+    {"name":"NY AM Session","status":"yes"|"no"|"partial","note":"<5 words>"}
+  ],
+  "warnings":[{"type":"pattern"|"pd"|"learn"|"info","text":"<warning text, reference past trade data if relevant>"}],
+  "opposing_pd_arrays":"<describe opposing PD arrays or 'none'>",
+  "suggested_entry":"<price>",
+  "suggested_sl":"<price>",
+  "suggested_tp":"<price>",
+  "rr":"<e.g. 2.4:1>",
+  "rr_class":"good"|"warn"|"bad",
+  "reasoning":"<3-4 sentences referencing chart, ICT concepts, and past trade patterns>",
+  "key_risk":"<single biggest risk>",
+  "detected_setup":"<one-line summary>",
+  "detected_confluences_list":["Order Block","Liquidity Sweep"]
+}`;
+
+  try{
+    const text = await neoFetch(convHistory, sys, 1200);
+    convHistory.push({role:'assistant',content:text});
+    const data=extractJSON(text);
+    removeLoading(loadId);
+    renderResponse(transcript,data,frame);
+  }catch(err){
+    removeLoading(loadId);
+    addErrorBubble(err.message);
+    convHistory.pop();
+  }
+  isThinking=false; setMicState('idle');
+}
+
+// ═══════════════════════════════════════════
+//  RENDER LIVE RESPONSE
+// ═══════════════════════════════════════════
+function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function scoreCol(n){return n>=5?'var(--green)':n>=3?'var(--amber)':'var(--red)'}
+function pctCls(n){return n>=65?'high':n>=45?'med':'low'}
+
+function renderResponse(transcript,d,frame){
+  const scroll=document.getElementById('resp-scroll');
+  const wrap=document.createElement('div');
+  const confItems=(d.confluences||[]).map(c=>`<div class="ci"><span class="cdot2 ${c.status}"></span><span class="ci-name">${escH(c.name)}</span><span class="ci-val ${c.status}">${c.status==='yes'?'✓':c.status==='partial'?'~':'✗'} ${escH(c.note)}</span></div>`).join('');
+  const warns=(d.warnings||[]).filter(w=>w.text).map(w=>`<div class="warn-item ${w.type}"><span class="warn-icon">${w.type==='pattern'?'⚠️':w.type==='pd'?'🚧':w.type==='learn'?'🧠':'ℹ️'}</span><span class="warn-text">${escH(w.text)}</span></div>`).join('');
+  const pct=d.confidence_pct||0; const score=d.confluence_score||0;
+  wrap.innerHTML=`
+    <div class="msg"><div class="msg-meta">YOU · ${new Date().toLocaleTimeString()}</div><div class="bubble-you">${escH(transcript)}</div></div>
+    <div class="msg"><div class="msg-meta">NEO · ${new Date().toLocaleTimeString()}</div><div class="bubble-ai">
+      <div class="verdict ${d.verdict_class}">${d.verdict_class==='take'?'✅':d.verdict_class==='skip'?'🚫':'⏳'} ${escH(d.verdict)}</div>
+      <div class="conf-score-big"><span class="conf-pct ${pctCls(pct)}">${pct}%</span><span class="conf-pct-label">historical confidence</span></div>
+      <div class="srow"><span class="slbl">CONFLUENCE</span><div class="sbar"><div class="sfill" style="width:${Math.round(score/7*100)}%;background:${scoreCol(score)}"></div></div><span class="snum" style="color:${scoreCol(score)}">${score}/7</span></div>
+      ${warns?`<div class="st">WARNINGS</div><div class="warning-list">${warns}</div>`:''}
+      ${d.opposing_pd_arrays&&d.opposing_pd_arrays!=='none'?`<div class="warn-item pd" style="margin-bottom:10px"><span class="warn-icon">🚧</span><span class="warn-text"><strong>Opposing PD Array:</strong> ${escH(d.opposing_pd_arrays)}</span></div>`:''}
+      <div class="st">ICT CONFLUENCES</div><div class="conf-grid">${confItems}</div>
+      <div class="st">LEVELS</div>
+      <div class="levels-row">
+        <div class="lcard e"><div class="lcard-lbl">ENTRY</div><div class="lcard-val">${escH(d.suggested_entry)}</div></div>
+        <div class="lcard s"><div class="lcard-lbl">STOP</div><div class="lcard-val">${escH(d.suggested_sl)}</div></div>
+        <div class="lcard t"><div class="lcard-lbl">TARGET</div><div class="lcard-val">${escH(d.suggested_tp)}</div></div>
+      </div>
+      <div class="st">ANALYSIS</div><div class="ai-text">${escH(d.reasoning)}</div>
+      ${d.key_risk?`<div class="risk-bar">⚠ ${escH(d.key_risk)}</div>`:''}
+    </div></div>`;
+  scroll.appendChild(wrap);
+  scroll.scrollTop=scroll.scrollHeight;
+  speakVerdict(d.verdict,d.confidence_pct,d.warnings);
+  if(d.verdict_class==='take'){
+    openInTrade({
+      direction: transcript.toLowerCase().includes('short')?'short':'long',
+      entry: d.suggested_entry,
+      sl: d.suggested_sl,
+      tp: d.suggested_tp,
+      rr: d.rr
+    });
+  }
+}
+
+function speakVerdict(verdict,pct,warnings){
+  // Convert uppercase verdict to natural speech
+  const v = verdict==='TAKE IT'?'Take it' : verdict==='SKIP IT'?'Skip it' : 'Wait';
+  const w = (warnings||[]).length ? ' Warning: '+warnings[0].text : '';
+  neoSpeak(v + '. Confidence ' + pct + ' percent.' + w);
+}
+
+// ── Voice engine ────────────────────────────────────────────────────────
+// Picks the best available modern voice — Google, Microsoft, or system
+let _bestVoice = null;
+
+function getBestVoice(){
+  if(_bestVoice) return _bestVoice;
+  const voices = speechSynthesis.getVoices();
+  if(!voices.length) return null;
+  // Priority: Google UK English Female > Google US English > Microsoft Natural voices > any English
+  const priority = [
+    v => v.name.includes('Google UK English Female'),
+    v => v.name.includes('Google UK English Male'),
+    v => v.name.includes('Google US English'),
+    v => v.name.includes('Microsoft') && v.name.includes('Natural'),
+    v => v.name.includes('Microsoft') && v.lang.startsWith('en'),
+    v => v.name.includes('Samantha'),
+    v => v.name.includes('Daniel'),
+    v => v.name.includes('Karen'),
+    v => v.lang.startsWith('en-GB'),
+    v => v.lang.startsWith('en-US'),
+    v => v.lang.startsWith('en'),
+  ];
+  for(const fn of priority){
+    const match = voices.find(fn);
+    if(match){ _bestVoice = match; return match; }
+  }
+  return voices[0];
+}
+
+// Natural speech fixes — prevent TTS reading abbreviations as letters
+function naturalise(text){
+  return text
+    .replace(/\bTAKE IT\b/gi,   'Take it')
+    .replace(/\bSKIP IT\b/gi,   'Skip it')
+    .replace(/\bWAIT\b/g,       'Wait')
+    .replace(/\bTAKE IT\./gi,   'Take it.')
+    .replace(/\bSKIP IT\./gi,   'Skip it.')
+    .replace(/\bNQ\b/g,         'N Q')
+    .replace(/\bOB\b/g,         'order block')
+    .replace(/\bFVG\b/g,        'fair value gap')
+    .replace(/\bMSS\b/g,        'market structure shift')
+    .replace(/\bCHoCH\b/g,      'change of character')
+    .replace(/\bBOS\b/g,        'break of structure')
+    .replace(/\bSSL\b/g,        'sell side liquidity')
+    .replace(/\bBSL\b/g,        'buy side liquidity')
+    .replace(/\bHTF\b/g,        'higher time frame')
+    .replace(/\bR:R\b/gi,       'risk reward')
+    .replace(/\bSL\b/g,         'stop loss')
+    .replace(/\bTP\b/g,         'take profit')
+    .replace(/([0-9]+):([0-9]+)/g, '$1 to $2')  // 4:1 -> "4 to 1"
+    .replace(/%/g, ' percent')
+    .replace(/\s+/g, ' ').trim();
+}
+
+function neoSpeak(text){
+  if(!text || !window.speechSynthesis) return;
+  try{
+    const clean = naturalise(text);
+    const u = new SpeechSynthesisUtterance(clean);
+    // Use best available voice
+    const voice = getBestVoice();
+    if(voice) u.voice = voice;
+    u.rate   = 1.05;  // slightly faster than default, still clear
+    u.pitch  = 1.0;
+    u.volume = 1;
+    u.onerror = ()=>{};
+    speechSynthesis.cancel();
+    setTimeout(()=>{ speechSynthesis.speak(u); }, 150);
+  }catch(e){}
+}
+
+// Load voices as soon as they're available (Chrome loads async)
+if(window.speechSynthesis){
+  speechSynthesis.onvoiceschanged = ()=>{ _bestVoice = null; getBestVoice(); };
+  getBestVoice(); // try immediately too
+}
+
+function removeEmpty(){ const e=document.getElementById('resp-empty'); if(e) e.remove() }
+
+// ═══════════════════════════════════════════
+//  IN-TRADE MODE
+// ═══════════════════════════════════════════
+function openInTrade(tradeData){
+  inTradeActive=true; inTradeData=tradeData;
+  document.getElementById('intrade-bar').classList.add('active');
+  const dir=tradeData.direction==='long'?'▲ LONG':'▼ SHORT';
+  document.getElementById('intrade-entry').textContent=`${dir}  ·  Entry ${tradeData.entry||'—'}  ·  SL ${tradeData.sl||'—'}  ·  TP ${tradeData.tp||'—'}  ·  R:R ${tradeData.rr||'—'}`;
+  const ctx=`[TRADE IS NOW OPEN — ${dir} · Entry: ${tradeData.entry} · Stop Loss: ${tradeData.sl} · Take Profit: ${tradeData.tp} · R:R: ${tradeData.rr}. The trader is now actively managing this live trade on NQ M1. For all questions from here, act as a live trade manager using ICT 2022: advise on trailing stops to OBs/FVGs, when to take partials at PD arrays, when to exit early if structure breaks, and the next draw on liquidity. Keep all responses under 4 sentences — this is a fast M1 environment.]`;
+  convHistory.push({role:'user',content:ctx});
+  convHistory.push({role:'assistant',content:'NEO is locked in — I am watching this trade with you. Ask me anything: trail your stop, take partials, check validity, or find your next draw.'});
+}
+
+function closeInTrade(){
+  inTradeActive=false; inTradeData=null;
+  document.getElementById('intrade-bar').classList.remove('active');
+  convHistory.push({role:'user',content:'[TRADE CLOSED — back to setup analysis mode]'});
+  convHistory.push({role:'assistant',content:'Trade closed. NEO is back in analysis mode — describe your next setup when ready.'});
+  addSystemMsg('Trade closed — back in setup analysis mode.');
+}
+
+function addSystemMsg(txt){
+  const scroll=document.getElementById('resp-scroll');
+  const el=document.createElement('div'); el.className='msg';
+  el.innerHTML=`<div class="bubble-ai" style="font-family:var(--mono);font-size:11px;color:var(--tx3);text-align:center;padding:7px;border-style:dashed">${escH(txt)}</div>`;
+  scroll.appendChild(el); scroll.scrollTop=scroll.scrollHeight;
+}
+
+async function sendMgmt(question){
+  if(isThinking) return;
+  const frame=captureFrame();
+  removeEmpty();
+  const loadId=addLoadingBubble();
+  isThinking=true; setMicState('thinking');
+  const msgContent=[];
+  if(frame) msgContent.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:frame.split(',')[1]}});
+  msgContent.push({type:'text',text:question});
+  convHistory.push({role:'user',content:msgContent});
+  const sys=`You are a live ICT 2022 NQ M1 trade management assistant with deep knowledge of ICT methodology. The trader has an active trade open on the 1-minute chart during the NY AM kill zone.
+
+TRADE MANAGEMENT RULES (ICT 2022):
+- Trail SL behind each new M1 OB that forms in trade direction. Never trail into noise.
+- Move SL to break-even after price reaches 1:1 R:R or fills first FVG target.
+- Take 25-50% partials at the first FVG CE, first opposing PD array, or 1.5:1 R:R.
+- Hold remainder to the full draw on liquidity (next BSL/SSL pool, PDH/PDL, SD extension).
+- Exit early if: M5 MSS forms against the trade, price spends 4+ M1 candles in your OB without momentum, or an opposing PD array is blocking the path.
+- Next target = the next unfilled FVG, nearest liquidity pool, or 1SD/2SD extension from entry.
+- On NQ M1: typical management window is 10-30 minutes during NY AM. After 11:00 AM, consider closing if not at target.
+
+Give concise, direct advice — maximum 3-4 sentences. Speed matters on M1. Always reference what you see on the chart screenshot.`;
+  try{
+    const text = await neoFetch(convHistory, sys, 250);
+    convHistory.push({role:'assistant',content:text});
+    removeLoading(loadId);
+    const scroll=document.getElementById('resp-scroll');
+    const wrap=document.createElement('div');
+    wrap.innerHTML=`
+      <div class="msg"><div class="msg-meta">YOU (MGMT) · ${new Date().toLocaleTimeString()}</div><div class="bubble-you" style="font-size:11px">${escH(question)}</div></div>
+      <div class="msg"><div class="msg-meta">NEO · ${new Date().toLocaleTimeString()}</div><div class="bubble-ai"><div class="ai-text" style="font-size:13px">${escH(text)}</div></div></div>`;
+    scroll.appendChild(wrap); scroll.scrollTop=scroll.scrollHeight;
+    neoSpeak(text);
+  }catch(err){
+    removeLoading(loadId); addErrorBubble(err.message); convHistory.pop();
+  }
+  isThinking=false; setMicState('idle');
+}
+function addLoadingBubble(){
+  const id='load-'+Date.now();
+  const scroll=document.getElementById('resp-scroll');
+  const el=document.createElement('div'); el.id=id; el.className='msg';
+  el.innerHTML=`<div class="msg-meta">NEO</div><div class="bubble-ai"><div class="loading-bubble"><span></span><span></span><span></span></div></div>`;
+  scroll.appendChild(el); scroll.scrollTop=scroll.scrollHeight; return id;
+}
+function removeLoading(id){ const e=document.getElementById(id); if(e) e.remove() }
+function addErrorBubble(msg, raw){
+  const scroll=document.getElementById('resp-scroll');
+  const el=document.createElement('div'); el.className='msg';
+  const rawHint = raw ? '<br><small style="color:var(--tx3);font-size:10px;word-break:break-all">Raw: '+escH(String(raw).slice(0,200))+'</small>' : '';
+  el.innerHTML=`<div class="msg-meta">ERROR</div><div class="bubble-ai" style="color:var(--red);font-size:12px">NEO error: ${escH(msg)}${rawHint}<br><small style="color:var(--tx3)">${escH(msg)}</small></div>`;
+  scroll.appendChild(el); scroll.scrollTop=scroll.scrollHeight;
+}
+function clearChat(){
+  document.getElementById('resp-scroll').innerHTML='<div class="resp-empty" id="resp-empty"><div style="font-size:28px;opacity:.2">🧠</div><div>Share your TradingView screen,<br>then press <kbd>SPACE</kbd> and describe<br>your setup.</div></div>';
+  convHistory=[];
+}
+
+// ═══════════════════════════════════════════
+//  LEARNING MODULE — UPLOAD & QUEUE
+// ═══════════════════════════════════════════
+function updateQueue(id,field,val){ const q=queue.find(q=>q.id===id); if(q) q[field]=val; }
+function removeFromQueue(id){ queue=queue.filter(q=>q.id!==id); renderQueue(); }
+function clearAnalysed(){ queue=queue.filter(q=>q.status!=='done'); renderQueue(); }
+
+// ═══════════════════════════════════════════
+//  ANALYSE ONE SCREENSHOT
+// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+//  ANALYSE ALL
+// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+//  RENDER INSIGHTS
+// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+//  LIGHTBOX
+// ═══════════════════════════════════════════
+const lbImgMap={};
+function openLightbox(qid){
+  const q=queue.find(q=>q.id===qid)||learned.find(l=>l.id===qid);
+  if(!q) return;
+  const src=q.dataUrl||q.imageData;
+  document.getElementById('lightbox-img').src=src;
+  document.getElementById('lightbox').classList.add('open');
+}
+function openLightboxSrc(src){
+  document.getElementById('lightbox-img').src=src;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox(){ document.getElementById('lightbox').classList.remove('open') }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeLightbox() });
+
+// ═══════════════════════════════════════════
+//  JOURNAL
+// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+//  EDGE REPORT
+// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════
+//  LIVE NQ PRICE FEED (Yahoo Finance proxy — no API key)
+// ═══════════════════════════════════════════════════════
+let lastPrice = null;
+
+async function fetchNQPrice(){
+  try{
+    // Yahoo Finance v8 — NQ continuous futures
+    const res = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/NQ=F?interval=1m&range=1d', {
+      headers:{'Accept':'application/json'}
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    const meta = data?.chart?.result?.[0]?.meta;
+    if(!meta) throw new Error('no meta');
+    const price = meta.regularMarketPrice;
+    const prev  = meta.previousClose || meta.chartPreviousClose;
+    const change = price - prev;
+    const pct    = (change/prev*100);
+    document.getElementById('ticker-price').textContent = price.toFixed(2);
+    const chEl = document.getElementById('ticker-change');
+    chEl.textContent = `${change>=0?'+':''}${change.toFixed(0)} (${pct>=0?'+':''}${pct.toFixed(2)}%)`;
+    chEl.className = 'ticker-change '+(change>=0?'up':'down');
+    lastPrice = price;
+  }catch(e){
+    document.getElementById('ticker-price').textContent = '—';
+    document.getElementById('ticker-change').textContent = 'no feed';
+    document.getElementById('ticker-change').className = 'ticker-change';
+  }
+}
+
+// refresh every 30s
+fetchNQPrice();
+setInterval(fetchNQPrice, 30000);
+
+// ═══════════════════════════════════════════════════════
+//  KILL ZONE TIMER
+// ═══════════════════════════════════════════════════════
+function updateKZTimer(){
+  const now = new Date();
+  const estOffset = -5 * 60; // EST = UTC-5 (adjust for DST if needed)
+  const utcMins = now.getUTCHours()*60 + now.getUTCMinutes();
+  const estMins = ((utcMins + estOffset) % 1440 + 1440) % 1440;
+  const kzStart = 9*60+30;   // 9:30
+  const kzEnd   = 11*60+30;  // 11:30
+  const preStart= 9*60+20;   // 9:20 (10 min warning)
+  const el = document.getElementById('kz-timer');
+
+  if(estMins >= kzStart && estMins < kzEnd){
+    const rem = kzEnd - estMins;
+    const h = Math.floor(rem/60), m = rem%60;
+    el.textContent = `⏱ ${h>0?h+'h ':''}${m}m left`;
+    el.className = rem <= 15 ? 'kz-timer warning' : 'kz-timer active';
+  } else if(estMins >= preStart && estMins < kzStart){
+    const rem = kzStart - estMins;
+    el.textContent = `⏱ opens in ${rem}m`;
+    el.className = 'kz-timer pre';
+  } else {
+    // next open
+    let minsToOpen = kzStart - estMins;
+    if(minsToOpen < 0) minsToOpen += 1440;
+    const hh = Math.floor(minsToOpen/60), mm = minsToOpen%60;
+    el.textContent = `⏱ opens in ${hh}h ${mm}m`;
+    el.className = 'kz-timer closed';
+  }
+}
+updateKZTimer();
+setInterval(updateKZTimer, 30000);
+
+// ═══════════════════════════════════════════════════════
+//  RISK CALCULATOR
+//  NQ:  1 point = $20   (full contract)
+//  MNQ: 1 point = $2    (micro contract)
+// ═══════════════════════════════════════════════════════
+const NQ_PER_PT  = 20;
+const MNQ_PER_PT = 2;
+
+function toggleRiskBar(){
+  const bar = document.getElementById('risk-bar-strip');
+  bar.classList.toggle('show');
+}
+
+function calcRisk(){
+  const pts     = parseFloat(document.getElementById('risk-pts').value);
+  const maxRisk = parseFloat(document.getElementById('risk-dollars').value);
+  const acct    = parseFloat(document.getElementById('risk-acct').value) || 0;
+  const res     = document.getElementById('risk-result');
+
+  if(!pts || !maxRisk || pts<=0 || maxRisk<=0){
+    res.innerHTML = '<span style="font-family:var(--mono);font-size:11px;color:var(--tx3)">Enter stop & risk above</span>';
+    return;
+  }
+
+  const riskPerNQ  = pts * NQ_PER_PT;
+  const riskPerMNQ = pts * MNQ_PER_PT;
+  const nqContracts  = Math.floor(maxRisk / riskPerNQ);
+  const mnqContracts = Math.floor(maxRisk / riskPerMNQ);
+  const actualRiskNQ  = nqContracts  * riskPerNQ;
+  const actualRiskMNQ = mnqContracts * riskPerMNQ;
+  const pctOfAcct = acct>0 ? (maxRisk/acct*100).toFixed(1) : null;
+
+  let html = '';
+  if(nqContracts >= 1){
+    html += `<span class="risk-chip nq">NQ: <strong>${nqContracts}</strong> contract${nqContracts!==1?'s':''} · $${actualRiskNQ.toLocaleString()} risk</span>`;
+  } else {
+    html += `<span class="risk-chip nq" style="opacity:.4">NQ: &lt;1 contract</span>`;
+  }
+  html += `<span class="risk-chip mnq">MNQ: <strong>${mnqContracts}</strong> · $${actualRiskMNQ.toLocaleString()} risk</span>`;
+  if(pctOfAcct) html += `<span class="risk-chip dollar">${pctOfAcct}% of account</span>`;
+
+  // helpful note if they can't afford 1 NQ
+  if(nqContracts < 1 && mnqContracts >= 1){
+    html += `<span style="font-family:var(--mono);font-size:10px;color:var(--amber)">→ trade MNQ only at this risk level</span>`;
+  }
+  res.innerHTML = html;
+}
+
+// When AI gives a setup with SL, auto-populate risk pts field
+function prefillRisk(slPts){
+  if(!slPts || isNaN(slPts)) return;
+  const input = document.getElementById('risk-pts');
+  if(input) { input.value = slPts; calcRisk(); }
+  // show the bar
+  document.getElementById('risk-bar-strip').classList.add('show');
+}
+
+// ═══════════════════════════════════════════════════════
+//  MODAL HELPERS
+// ═══════════════════════════════════════════════════════
+function openModal(id)  { document.getElementById(id).classList.add('open')    }
+function closeModal(id) { document.getElementById(id).classList.remove('open') }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open')) });
+
+// ═══════════════════════════════════════════════════════
+//  PRE-MARKET BRIEFING
+// ═══════════════════════════════════════════════════════
+async function openBriefing(){
+  openModal('briefing-modal');
+}
+
+async function generateBriefing(){
+  const btn = document.getElementById('briefing-gen-btn');
+  btn.disabled = true; btn.textContent = 'Generating…';
+  const body = document.getElementById('briefing-body');
+  body.innerHTML = '<div style="display:flex;gap:5px;padding:20px"><span style="font-family:var(--mono);font-size:12px;color:var(--tx3)">Building your game plan</span><div class="loading-bubble"><span></span><span></span><span></span></div></div>';
+
+  const priceCtx = lastPrice ? `Current NQ price: ${lastPrice}` : 'Live price unavailable';
+  const learnCtx = buildLearningContext();
+  const now = new Date().toLocaleString('en-US',{timeZone:'America/New_York',weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  const sys = `${ICT_KB}
+
+You are an ICT 2022 pre-market analyst for NQ futures. Generate a structured NY AM session briefing. Be specific and actionable.
+
+RESPOND IN THIS JSON ONLY:
+{
+  "date": "<today's date>",
+  "htf_bias": "bullish"|"bearish"|"neutral",
+  "htf_reasoning": "<2 sentences why — reference HTF structure>",
+  "daily_range_note": "<what the prior day's candle tells us — range, close position, structure>",
+  "asian_range": {"high":"<approx or note>","low":"<approx or note>","note":"<which side likely swept first>"},
+  "key_levels": [
+    {"label":"<e.g. Prior Day High>","price":"<approx>","type":"resistance|support|liquidity","note":"<why important>"}
+  ],
+  "draw_on_liquidity": "<what is the primary target for today's NY AM move — specific PD array>",
+  "judas_swing_watch": "<which direction the fake open move likely goes and why>",
+  "optimal_entry_window": "<e.g. 9:45–10:15 after sweep confirmation>",
+  "scenarios": [
+    {"bias":"bullish","trigger":"<what needs to happen>","entry_idea":"<OB/FVG level>","target":"<PD array>"},
+    {"bias":"bearish","trigger":"<what needs to happen>","entry_idea":"<OB/FVG level>","target":"<PD array>"}
+  ],
+  "avoid": "<what NOT to do today — specific risk to avoid>",
+  "one_sentence_plan": "<the single most important thing to focus on today>"
+}`;
+
+  try{
+    const text = await neoFetch([{role:'user',content:`Date: ${now}
+${priceCtx}
+
+${learnCtx}
+
+Generate pre-market briefing.`}], sys, 1200, MODEL_DEEP);
+    const d = extractJSON(text);
+    document.getElementById('briefing-time').textContent = 'Generated '+new Date().toLocaleTimeString();
+
+    const levelsHtml = (d.key_levels||[]).map(l=>`
+      <div class="brief-level">
+        <span class="brief-level-label">${escH(l.label)}</span>
+        <span class="brief-level-price">${escH(l.price)}</span>
+        <span class="brief-level-note">${escH(l.note)}</span>
+      </div>`).join('');
+
+    const scenariosHtml = (d.scenarios||[]).map(s=>`
+      <div class="warn-item ${s.bias==='bullish'?'ok':'pattern'}" style="margin-bottom:6px">
+        <span>${s.bias==='bullish'?'▲':'▼'}</span>
+        <span><strong>${escH(s.trigger)}</strong> → ${escH(s.entry_idea)} → target ${escH(s.target)}</span>
+      </div>`).join('');
+
+    body.innerHTML = `
+      <div class="brief-section">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <span class="brief-bias-chip ${d.htf_bias}">HTF ${(d.htf_bias||'').toUpperCase()}</span>
+          <span style="font-size:12px;color:var(--tx2)">${escH(d.htf_reasoning)}</span>
+        </div>
+        <div style="padding:9px 12px;background:var(--gd);border:1px solid var(--gb);border-radius:var(--r);font-size:13px;color:var(--green);font-family:var(--mono)">${escH(d.one_sentence_plan)}</div>
+      </div>
+      <div class="brief-section">
+        <div class="brief-section-title">Key levels</div>
+        ${levelsHtml}
+      </div>
+      <div class="brief-section">
+        <div class="brief-section-title">Draw on liquidity</div>
+        <div class="brief-row"><span class="brief-key">Primary target</span><span class="brief-val">${escH(d.draw_on_liquidity)}</span></div>
+        <div class="brief-row"><span class="brief-key">Judas swing watch</span><span class="brief-val">${escH(d.judas_swing_watch)}</span></div>
+        <div class="brief-row"><span class="brief-key">Optimal entry window</span><span class="brief-val bull">${escH(d.optimal_entry_window)}</span></div>
+      </div>
+      <div class="brief-section">
+        <div class="brief-section-title">Asian range</div>
+        <div class="brief-row"><span class="brief-key">High</span><span class="brief-val">${escH(d.asian_range?.high||'—')}</span></div>
+        <div class="brief-row"><span class="brief-key">Low</span><span class="brief-val">${escH(d.asian_range?.low||'—')}</span></div>
+        <div class="brief-row"><span class="brief-key">Note</span><span class="brief-val">${escH(d.asian_range?.note||'—')}</span></div>
+      </div>
+      <div class="brief-section">
+        <div class="brief-section-title">Scenarios</div>
+        ${scenariosHtml}
+      </div>
+      <div class="brief-section">
+        <div class="brief-section-title">Avoid today</div>
+        <div class="warn-item pattern"><span>⚠️</span><span class="warn-text">${escH(d.avoid)}</span></div>
+      </div>`;
+
+    // auto-speak the plan
+    neoSpeak(`Today's bias is ${d.htf_bias}. ${d.one_sentence_plan}. Optimal entry: ${d.optimal_entry_window}.`);
+  }catch(err){
+    body.innerHTML=`<div style="color:var(--red);padding:20px;font-size:12px">Failed: ${escH(err.message)}</div>`;
+  }
+  btn.disabled=false; btn.textContent='Regenerate';
+}
+
+// ═══════════════════════════════════════════════════════
+//  TRADE REPLAY
+// ═══════════════════════════════════════════════════════
+let replayImageData = null;
+
+function openReplay(){ openModal('replay-modal'); }
+
+function handleReplayUpload(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    replayImageData = ev.target.result;
+    const prev = document.getElementById('replay-preview');
+    prev.src = replayImageData; prev.style.display='block';
+    document.getElementById('replay-drop').textContent = '✓ Screenshot loaded — click to change';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function generateReplay(){
+  if(!replayImageData){ alert('Please upload a chart screenshot first.'); return; }
+  const btn = document.getElementById('replay-gen-btn');
+  btn.disabled=true; btn.textContent='Replaying…';
+  const container = document.getElementById('replay-steps-container');
+  container.innerHTML = '<div class="loading-bubble" style="padding:12px"><span></span><span></span><span></span></div>';
+
+  const dir     = document.getElementById('replay-dir').value;
+  const outcome = document.getElementById('replay-outcome').value;
+  const entry   = document.getElementById('replay-entry').value;
+  const notes   = document.getElementById('replay-notes').value;
+
+  const sys = `${ICT_KB}
+
+You are an ICT 2022 NQ M1 trade coach running a step-by-step replay of a past trade. Walk through the trade as if narrating it live — what you would have said at each stage.
+
+RESPOND IN THIS JSON ONLY:
+{
+  "title": "<one-line trade description>",
+  "steps": [
+    {
+      "type": "context"|"entry"|"management"|"exit"|"mistake"|"lesson",
+      "label": "<short label e.g. 'Pre-entry context' / 'Entry trigger' / 'First management' / 'Final exit'>",
+      "text": "<what you would have said at this exact moment — specific ICT reasoning, levels, what to watch>"
+    }
+  ],
+  "overall_grade": "A"|"B"|"C"|"D",
+  "grade_reason": "<1-2 sentences on the overall trade quality>",
+  "biggest_mistake": "<single most important thing done wrong — or 'None — clean execution'>",
+  "key_takeaway": "<one actionable improvement for next time>"
+}`;
+
+  try{
+    const content=[
+      {type:'image',source:{type:'base64',media_type:'image/jpeg',data:replayImageData.split(',')[1]}},
+      {type:'text',text:`Direction: ${dir}\nOutcome: ${outcome}\nEntry: ${entry||'not specified'}\nNotes: ${notes||'none'}`}
+    ];
+    const text = await neoFetch([{role:'user',content}], sys, 1200, MODEL_DEEP);
+    const d = extractJSON(text);
+
+    const gradeCol = {A:'var(--green)',B:'var(--blue)',C:'var(--amber)',D:'var(--red)'}[d.overall_grade]||'var(--tx)';
+    const stepsHtml = (d.steps||[]).map(s=>`
+      <div class="replay-step ${s.type}">
+        <div class="replay-step-header">${escH(s.label)}</div>
+        <div class="replay-step-text">${escH(s.text)}</div>
+      </div>`).join('');
+
+    container.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="font-family:var(--mono);font-size:28px;font-weight:600;color:${gradeCol}">${d.overall_grade}</span>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--tx)">${escH(d.title)}</div>
+          <div style="font-size:12px;color:var(--tx2)">${escH(d.grade_reason)}</div>
+        </div>
+      </div>
+      <div class="replay-steps">${stepsHtml}</div>
+      <div class="warn-item pattern" style="margin-top:10px"><span>⚠️</span><span class="warn-text"><strong>Biggest mistake:</strong> ${escH(d.biggest_mistake)}</span></div>
+      <div class="warn-item ok" style="margin-top:6px"><span>🧠</span><span class="warn-text"><strong>Key takeaway:</strong> ${escH(d.key_takeaway)}</span></div>`;
+
+    // save replay to journal if trade exists
+    if(d.key_takeaway && trades.length>0){
+      trades[0].replayLesson = d.key_takeaway;
+      trades[0].replayGrade  = d.overall_grade;
+      saveTrades(trades);
+    }
+  }catch(err){
+    container.innerHTML=`<div style="color:var(--red);font-size:12px">Failed: ${escH(err.message)}</div>`;
+  }
+  btn.disabled=false; btn.textContent='▶ Run replay';
+}
+
+// ═══════════════════════════════════════════════════════
+//  SESSION DEBRIEF
+// ═══════════════════════════════════════════════════════
+async function openDebrief(){ openModal('debrief-modal'); }
+
+async function generateDebrief(){
+  const btn = document.getElementById('debrief-gen-btn');
+  btn.disabled=true; btn.textContent='Generating…';
+  const body = document.getElementById('debrief-body');
+  body.innerHTML = '<div style="display:flex;gap:5px;padding:20px"><span style="font-family:var(--mono);font-size:12px;color:var(--tx3)">Analysing today\'s session</span><div class="loading-bubble"><span></span><span></span><span></span></div></div>';
+
+  // gather today's trades
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  const todayTrades = trades.filter(t=>t.ts>=todayStart.getTime());
+  const completedToday = todayTrades.filter(t=>t.outcome&&t.outcome!=='pending');
+  const wins = completedToday.filter(t=>t.outcome==='win');
+  const losses = completedToday.filter(t=>t.outcome==='loss');
+
+  const tradeSummary = todayTrades.map((t,i)=>
+    `Trade ${i+1}: ${(t.direction||'?').toUpperCase()} | Verdict: ${t.aiVerdict} | Outcome: ${t.outcome} | Setup: ${t.setup?.slice(0,60)} | Conf: ${t.confidencePct}% | Warnings: ${(t.warnings||[]).map(w=>w.text).join('; ')||'none'}`
+  ).join('\n') || 'No trades logged today.';
+
+  const learnCtx = buildLearningContext();
+
+  const sys = `${ICT_KB}
+
+You are an ICT 2022 NQ trading coach. Generate an end-of-session debrief. Be honest, specific, and constructive.
+
+RESPOND IN THIS JSON ONLY:
+{
+  "session_rating": <1-10>,
+  "session_summary": "<2-3 sentences summarising the session — what happened, quality of execution>",
+  "what_went_well": ["<specific thing 1>","<specific thing 2>"],
+  "what_went_wrong": ["<specific thing 1>","<specific thing 2>"],
+  "missed_opportunities": "<any high-probability setups the trader should have taken but didn't based on the data>",
+  "discipline_score": <1-10>,
+  "discipline_note": "<was the trader patient? Did they stick to kill zone? Revenge trade? Over-trade?>",
+  "pattern_spotted": "<any recurring pattern in today's trades — good or bad>",
+  "one_focus_tomorrow": "<the single most important thing to improve tomorrow>",
+  "homework": "<one specific thing to review or practise before tomorrow's session>"
+}`;
+
+  try{
+    const text = await neoFetch([{role:'user',content:`Today's trades:
+${tradeSummary}
+
+Historical context:
+${learnCtx}`}], sys, 1000, MODEL_DEEP);
+    const d = extractJSON(text);
+
+    const ratingCol = d.session_rating>=7?'var(--green)':d.session_rating>=5?'var(--amber)':'var(--red)';
+    const discCol   = d.discipline_score>=7?'var(--green)':d.discipline_score>=5?'var(--amber)':'var(--red)';
+
+    body.innerHTML = `
+      <div class="debrief-stat-row">
+        <div class="debrief-stat"><div class="debrief-stat-val" style="color:${ratingCol}">${d.session_rating}/10</div><div class="debrief-stat-lbl">Session rating</div></div>
+        <div class="debrief-stat"><div class="debrief-stat-val" style="color:${discCol}">${d.discipline_score}/10</div><div class="debrief-stat-lbl">Discipline</div></div>
+        <div class="debrief-stat"><div class="debrief-stat-val" style="color:${wins.length>losses.length?'var(--green)':'var(--red)'}">${wins.length}W / ${losses.length}L</div><div class="debrief-stat-lbl">Today's results</div></div>
+      </div>
+      <div style="padding:10px 12px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);font-size:13px;color:var(--tx2);margin-bottom:12px;line-height:1.6">${escH(d.session_summary)}</div>
+      <div class="brief-section">
+        <div class="brief-section-title">What went well</div>
+        ${(d.what_went_well||[]).map(w=>`<div class="icard-warn ok" style="margin-bottom:4px"><span>✅</span><span>${escH(w)}</span></div>`).join('')}
+      </div>
+      <div class="brief-section">
+        <div class="brief-section-title">What went wrong</div>
+        ${(d.what_went_wrong||[]).map(w=>`<div class="warn-item pattern" style="margin-bottom:4px"><span>❌</span><span class="warn-text">${escH(w)}</span></div>`).join('')}
+      </div>
+      <div class="brief-section">
+        <div class="brief-section-title">Discipline note</div>
+        <div style="font-size:12px;color:var(--tx2);line-height:1.6">${escH(d.discipline_note)}</div>
+      </div>
+      ${d.missed_opportunities?`<div class="brief-section"><div class="brief-section-title">Missed opportunities</div><div class="warn-item pd" style=""><span>💭</span><span class="warn-text">${escH(d.missed_opportunities)}</span></div></div>`:''}
+      ${d.pattern_spotted?`<div class="brief-section"><div class="brief-section-title">Pattern spotted</div><div class="warn-item learn" style=""><span>🧠</span><span class="warn-text">${escH(d.pattern_spotted)}</span></div></div>`:''}
+      <div style="margin-top:14px;padding:12px;background:var(--blue);border-radius:var(--r)">
+        <div style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.6);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">FOCUS FOR TOMORROW</div>
+        <div style="font-size:13px;color:#fff;font-weight:500">${escH(d.one_focus_tomorrow)}</div>
+        ${d.homework?`<div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:6px">📚 Homework: ${escH(d.homework)}</div>`:''}
+      </div>`;
+
+    // speak the summary
+    neoSpeak(`Session rating ${d.session_rating} out of 10. Tomorrow: ${d.one_focus_tomorrow}`);
+
+    // save to journal as a daily note
+    const debriefEntry = {
+      id:'debrief-'+Date.now(),ts:Date.now(),type:'debrief',
+      rating:d.session_rating,discipline:d.discipline_score,
+      summary:d.session_summary,focus:d.one_focus_tomorrow,
+      outcome:'debrief',direction:'n/a',setup:'Daily debrief',
+      aiVerdict:'info',confluences:[],warnings:[]
+    };
+    trades.unshift(debriefEntry); saveTrades(trades);
+  }catch(err){
+    body.innerHTML=`<div style="color:var(--red);padding:20px;font-size:12px">Failed: ${escH(err.message)}</div>`;
+  }
+  btn.disabled=false; btn.textContent='Regenerate';
+}
+
+// ── auto-open briefing at 9:25am EST ─────────────────────────────────────
+function checkAutoBriefing(){
+  const now = new Date();
+  const estMins = ((now.getUTCHours()*60+now.getUTCMinutes()-300)+1440)%1440;
+  if(estMins===9*60+25){
+    openModal('briefing-modal');
+    generateBriefing();
+  }
+}
+setInterval(checkAutoBriefing, 60000);
+
+// ── auto-open debrief at 11:35am EST ─────────────────────────────────────
+function checkAutoDebrief(){
+  const now = new Date();
+  const estMins = ((now.getUTCHours()*60+now.getUTCMinutes()-300)+1440)%1440;
+  if(estMins===11*60+35 && trades.filter(t=>{const d=new Date();d.setHours(0,0,0,0);return t.ts>=d.getTime()&&t.type!=='debrief'}).length>0){
+    openModal('debrief-modal');
+    generateDebrief();
+  }
+}
+setInterval(checkAutoDebrief, 60000);
+
+checkApiKey();
+setupSpeech();
+renderLearnPage();  // async — starts mic engine once
+applyHotkeys();
+initSupabase();
+</script>
+
+<!-- BRIEFING MODAL -->
+<div class="modal-overlay" id="briefing-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">📋 NEO · PRE-MARKET BRIEFING</span>
+      <button class="modal-close" onclick="closeModal('briefing-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="briefing-body">
+      <div style="text-align:center;padding:30px;color:var(--tx3);font-size:12px">
+        <div style="font-size:24px;opacity:.3;margin-bottom:10px">📋</div>
+        Click Generate to build your pre-market game plan.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn primary" id="briefing-gen-btn" onclick="generateBriefing()">Generate briefing</button>
+      <button class="modal-btn secondary" onclick="closeModal('briefing-modal')">Close</button>
+      <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--tx3)" id="briefing-time"></span>
+    </div>
+  </div>
+</div>
+
+<!-- REPLAY MODAL -->
+<div class="modal-overlay" id="replay-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">▶ NEO · TRADE REPLAY</span>
+      <button class="modal-close" onclick="closeModal('replay-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:14px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--tx3);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">Upload your trade chart</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--tx3);margin-bottom:4px">Direction</div>
+            <select id="replay-dir" style="width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:5px;color:var(--tx);font-family:var(--mono);font-size:11px;padding:5px 7px;outline:none">
+              <option value="long">Long</option>
+              <option value="short">Short</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--tx3);margin-bottom:4px">Outcome</div>
+            <select id="replay-outcome" style="width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:5px;color:var(--tx);font-family:var(--mono);font-size:11px;padding:5px 7px;outline:none">
+              <option value="win">Win</option>
+              <option value="loss">Loss</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--tx3);margin-bottom:4px">Entry price</div>
+            <input type="number" id="replay-entry" step="0.25" placeholder="e.g. 18240" style="width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:5px;color:var(--tx);font-family:var(--mono);font-size:11px;padding:5px 7px;outline:none"/>
+          </div>
+        </div>
+        <label style="display:block;border:1.5px dashed var(--b2);border-radius:var(--r);padding:16px;text-align:center;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--tx3);transition:all .15s;margin-bottom:8px" id="replay-drop" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--b2)'">
+          📸 Click to upload chart screenshot
+          <input type="file" accept="image/*" id="replay-file-input" style="display:none" onchange="handleReplayUpload(event)"/>
+        </label>
+        <img id="replay-preview" style="display:none;width:100%;max-height:160px;object-fit:cover;border-radius:var(--r);border:1px solid var(--b1);margin-bottom:8px" onclick="openLightboxSrc(this.src)"/>
+        <textarea id="replay-notes" placeholder="Optional: describe what you were thinking at entry, what happened…" style="width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:5px;color:var(--tx);font-family:var(--font);font-size:12px;padding:7px 9px;resize:none;height:52px;outline:none;transition:border .15s;line-height:1.4"></textarea>
+      </div>
+      <div id="replay-steps-container"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn primary" id="replay-gen-btn" onclick="generateReplay()">▶ Run replay</button>
+      <button class="modal-btn secondary" onclick="closeModal('replay-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEBRIEF MODAL -->
+<div class="modal-overlay" id="debrief-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">📊 NEO · SESSION DEBRIEF</span>
+      <button class="modal-close" onclick="closeModal('debrief-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="debrief-body">
+      <div style="text-align:center;padding:30px;color:var(--tx3);font-size:12px">
+        <div style="font-size:24px;opacity:.3;margin-bottom:10px">📊</div>
+        Generate a debrief of today's session and all logged trades.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn primary" id="debrief-gen-btn" onclick="generateDebrief()">Generate debrief</button>
+      <button class="modal-btn secondary" onclick="closeModal('debrief-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOTKEY SETTINGS MODAL -->
+<div class="hk-modal" id="hk-modal">
+  <div class="hk-modal-box">
+    <div class="hk-modal-title">⌨ CUSTOMISE HOTKEYS</div>
+    <div class="hk-modal-row">
+      <span class="hk-modal-label">▲ LONG</span>
+      <button class="hk-capture-btn" id="hk-long-btn" onclick="startCapture('long')">F1</button>
+    </div>
+    <div class="hk-modal-row">
+      <span class="hk-modal-label">▼ SHORT</span>
+      <button class="hk-capture-btn" id="hk-short-btn" onclick="startCapture('short')">F2</button>
+    </div>
+    <div class="hk-hint">Click a button then press any key to set it.<br>Works with F-keys, letters, numbers — any key.</div>
+    <div class="hk-modal-footer">
+      <button class="hk-cancel-btn" onclick="closeHkSettings()">Cancel</button>
+      <button class="hk-save-btn" onclick="saveHkSettings()">Save hotkeys</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
