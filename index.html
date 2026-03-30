@@ -1012,7 +1012,13 @@ async function askNeo(){
   convHistory.push({role:'user',content:msgContent});
   var sys = ICT_KB+'\n\nYou are NEO, ICT 2022 NQ analyst. Answer the question directly — 2-3 sentences, plain English, no JSON. Focus on ICT structure visible on chart.';
   try{
-    var text = await neoFetch(convHistory, sys, 300, MODEL_LIVE);
+    var trimmedAsk = convHistory.slice(-20).map(function(msg, i, arr){
+      if(i===arr.length-1) return msg;
+      if(!Array.isArray(msg.content)) return msg;
+      var textOnly = msg.content.filter(function(b){return b.type==='text';});
+      return textOnly.length ? Object.assign({},msg,{content:textOnly}) : msg;
+    });
+    var text = await neoFetch(trimmedAsk, sys, 300, MODEL_LIVE);
     convHistory.push({role:'assistant',content:text});
     removeLoading(loadId);
     var scroll=document.getElementById('resp-scroll');
@@ -1690,7 +1696,15 @@ CRITICAL: Output ONLY a raw JSON object. No backticks. No code fences. No markdo
 
   try{
     console.log('[NEO] Calling API…');
-    const text = await neoFetch(convHistory, sys, 1200, MODEL_LIVE);
+    // Strip images from all messages except the latest — keeps tokens low
+    // and prevents old base64 images causing 400 errors on long sessions
+    const trimmedHistory = convHistory.slice(-20).map((msg, i, arr) => {
+      if(i === arr.length - 1) return msg; // keep latest message as-is
+      if(!Array.isArray(msg.content)) return msg;
+      const textOnly = msg.content.filter(b => b.type === 'text');
+      return textOnly.length ? {...msg, content: textOnly} : msg;
+    });
+    const text = await neoFetch(trimmedHistory, sys, 1200, MODEL_LIVE);
     convHistory.push({role:'assistant', content:text});
     const data = extractJSON(text);
     data.direction = direction;
