@@ -585,10 +585,9 @@ button:focus{outline:none}
       <span class="ticker-change" id="ticker-change"></span>
     </div>
     <div class="session-badge"><span class="sdot"></span>NEO · NY AM · 9:30–11:30</div>
-    <button class="toolbar-btn" id="briefing-btn" onclick="openBriefing()">📋 Briefing</button>
     <button class="toolbar-btn" id="replay-btn" onclick="openReplay()">▶ Replay</button>
-    <button class="toolbar-btn" id="debrief-btn" onclick="openDebrief()">📊 Debrief</button>
     <button class="risk-toggle-btn" onclick="toggleRiskBar()">⚖ Risk calc</button>
+    <span class="cost-badge" id="cost-badge" onclick="openCostModal()" title="API usage cost">$0.00</span>
     <button class="settings-btn" onclick="showSetup()" title="API key settings">⚙</button>
     <span style="font-family:var(--mono);font-size:9px;color:var(--tx3);padding:2px 6px;background:var(--s2);border:1px solid var(--b1);border-radius:4px;white-space:nowrap">LIVE: Sonnet · LEARN: Opus</span>
   </div>
@@ -717,6 +716,64 @@ button:focus{outline:none}
 
 
 <script>
+
+// ═══════════════════════════════════════════════════════
+//  COST TRACKER
+// ═══════════════════════════════════════════════════════
+const COST_STORE = 'neo_costs_v1';
+// Approximate costs per call (USD) based on avg token usage
+const COSTS = {
+  analysis: 0.045,  // F1/F2: ~1500 input tokens (ICT_KB) + 200 output, Sonnet
+  ask:       0.012,  // Ask: ~1200 input + 100 output, Sonnet
+  replay:    0.18,   // Replay: image + ~1200 input + 300 output, Opus 4
+  learn:     0.04,   // Learn: image + ~200 input + 100 output, Sonnet
+};
+
+function loadCosts(){
+  try{
+    var d=JSON.parse(localStorage.getItem(COST_STORE)||'{}');
+    var today=new Date().toDateString();
+    if(d.date!==today) return {date:today,analyses:0,asks:0,replays:0,learns:0,total:0};
+    return d;
+  }catch(e){ return {date:new Date().toDateString(),analyses:0,asks:0,replays:0,learns:0,total:0}; }
+}
+
+function saveCosts(c){ localStorage.setItem(COST_STORE,JSON.stringify(c)); }
+
+function trackCost(type){
+  var c=loadCosts();
+  var cost=COSTS[type]||0;
+  c[type+'s']=(c[type+'s']||0)+1;
+  c.total=(c.total||0)+cost;
+  saveCosts(c);
+  updateCostBadge(c);
+}
+
+function updateCostBadge(c){
+  c=c||loadCosts();
+  var el=document.getElementById('cost-badge');
+  if(el) el.textContent='$'+(c.total||0).toFixed(2);
+}
+
+function openCostModal(){
+  var c=loadCosts();
+  document.getElementById('ct-analyses').textContent=c.analyses||0;
+  document.getElementById('ct-asks').textContent=c.asks||0;
+  document.getElementById('ct-replays').textContent=c.replays||0;
+  document.getElementById('ct-learns').textContent=c.learns||0;
+  document.getElementById('ct-total').textContent='$'+(c.total||0).toFixed(2);
+  document.getElementById('cost-modal').style.display='flex';
+  document.getElementById('cost-modal').style.alignItems='center';
+  document.getElementById('cost-modal').style.justifyContent='center';
+}
+
+function closeCostModal(){ document.getElementById('cost-modal').style.display='none'; }
+
+function resetCosts(){
+  var fresh={date:new Date().toDateString(),analyses:0,asks:0,replays:0,learns:0,total:0};
+  saveCosts(fresh); updateCostBadge(fresh); closeCostModal();
+}
+
 // ═══════════════════════════════════════════════════════
 //  SUPABASE CLOUD STORAGE
 // ═══════════════════════════════════════════════════════
@@ -944,6 +1001,7 @@ async function analyseLearnEntry(entry){
     entry.note      = d.note||'Annotation read';
     saveLearnData(); refreshLearnCard(entry); updateLearnStats();
     if(hasCloud()) sbSaveEntry(entry);
+    trackCost('learn');
   }catch(err){
     entry.note = 'Read error: '+err.message.slice(0,60);
     saveLearnData(); refreshLearnCard(entry);
@@ -2756,112 +2814,6 @@ function closeModal(id) { document.getElementById(id).classList.remove('open') }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open')) });
 
 // ═══════════════════════════════════════════════════════
-//  PRE-MARKET BRIEFING
-// ═══════════════════════════════════════════════════════
-async function openBriefing(){
-  openModal('briefing-modal');
-}
-
-async function generateBriefing(){
-  const btn = document.getElementById('briefing-gen-btn');
-  btn.disabled = true; btn.textContent = 'Generating…';
-  const body = document.getElementById('briefing-body');
-  body.innerHTML = '<div style="display:flex;gap:5px;padding:20px"><span style="font-family:var(--mono);font-size:12px;color:var(--tx3)">Building your game plan</span><div class="loading-bubble"><span></span><span></span><span></span></div></div>';
-
-  const priceCtx = lastPrice ? `Current NQ price: ${lastPrice}` : 'Live price unavailable';
-  const learnCtx = buildLearningContext();
-  const now = new Date().toLocaleString('en-US',{timeZone:'America/New_York',weekday:'long',year:'numeric',month:'long',day:'numeric'});
-
-  const sys = `${ICT_KB}
-
-You are an ICT 2022 pre-market analyst for NQ futures. Generate a structured NY AM session briefing. Be specific and actionable.
-
-RESPOND IN THIS JSON ONLY:
-{
-  "date": "<today's date>",
-  "htf_bias": "bullish"|"bearish"|"neutral",
-  "htf_reasoning": "<2 sentences why — reference HTF structure>",
-  "daily_range_note": "<what the prior day's candle tells us — range, close position, structure>",
-  "asian_range": {"high":"<approx or note>","low":"<approx or note>","note":"<which side likely swept first>"},
-  "key_levels": [
-    {"label":"<e.g. Prior Day High>","price":"<approx>","type":"resistance|support|liquidity","note":"<why important>"}
-  ],
-  "draw_on_liquidity": "<what is the primary target for today's NY AM move — specific PD array>",
-  "judas_swing_watch": "<which direction the fake open move likely goes and why>",
-  "optimal_entry_window": "<e.g. 9:45–10:15 after sweep confirmation>",
-  "scenarios": [
-    {"bias":"bullish","trigger":"<what needs to happen>","entry_idea":"<OB/FVG level>","target":"<PD array>"},
-    {"bias":"bearish","trigger":"<what needs to happen>","entry_idea":"<OB/FVG level>","target":"<PD array>"}
-  ],
-  "avoid": "<what NOT to do today — specific risk to avoid>",
-  "one_sentence_plan": "<the single most important thing to focus on today>"
-}`;
-
-  try{
-    const text = await neoFetch([{role:'user',content:`Date: ${now}
-${priceCtx}
-
-${learnCtx}
-
-Generate pre-market briefing.`}], sys, 1200, MODEL_DEEP);
-    const d = extractJSON(text);
-    document.getElementById('briefing-time').textContent = 'Generated '+new Date().toLocaleTimeString();
-
-    const levelsHtml = (d.key_levels||[]).map(l=>`
-      <div class="brief-level">
-        <span class="brief-level-label">${escH(l.label)}</span>
-        <span class="brief-level-price">${escH(l.price)}</span>
-        <span class="brief-level-note">${escH(l.note)}</span>
-      </div>`).join('');
-
-    const scenariosHtml = (d.scenarios||[]).map(s=>`
-      <div class="warn-item ${s.bias==='bullish'?'ok':'pattern'}" style="margin-bottom:6px">
-        <span>${s.bias==='bullish'?'▲':'▼'}</span>
-        <span><strong>${escH(s.trigger)}</strong> → ${escH(s.entry_idea)} → target ${escH(s.target)}</span>
-      </div>`).join('');
-
-    body.innerHTML = `
-      <div class="brief-section">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <span class="brief-bias-chip ${d.htf_bias}">HTF ${(d.htf_bias||'').toUpperCase()}</span>
-          <span style="font-size:12px;color:var(--tx2)">${escH(d.htf_reasoning)}</span>
-        </div>
-        <div style="padding:9px 12px;background:var(--gd);border:1px solid var(--gb);border-radius:var(--r);font-size:13px;color:var(--green);font-family:var(--mono)">${escH(d.one_sentence_plan)}</div>
-      </div>
-      <div class="brief-section">
-        <div class="brief-section-title">Key levels</div>
-        ${levelsHtml}
-      </div>
-      <div class="brief-section">
-        <div class="brief-section-title">Draw on liquidity</div>
-        <div class="brief-row"><span class="brief-key">Primary target</span><span class="brief-val">${escH(d.draw_on_liquidity)}</span></div>
-        <div class="brief-row"><span class="brief-key">Judas swing watch</span><span class="brief-val">${escH(d.judas_swing_watch)}</span></div>
-        <div class="brief-row"><span class="brief-key">Optimal entry window</span><span class="brief-val bull">${escH(d.optimal_entry_window)}</span></div>
-      </div>
-      <div class="brief-section">
-        <div class="brief-section-title">Asian range</div>
-        <div class="brief-row"><span class="brief-key">High</span><span class="brief-val">${escH(d.asian_range?.high||'—')}</span></div>
-        <div class="brief-row"><span class="brief-key">Low</span><span class="brief-val">${escH(d.asian_range?.low||'—')}</span></div>
-        <div class="brief-row"><span class="brief-key">Note</span><span class="brief-val">${escH(d.asian_range?.note||'—')}</span></div>
-      </div>
-      <div class="brief-section">
-        <div class="brief-section-title">Scenarios</div>
-        ${scenariosHtml}
-      </div>
-      <div class="brief-section">
-        <div class="brief-section-title">Avoid today</div>
-        <div class="warn-item pattern"><span>⚠️</span><span class="warn-text">${escH(d.avoid)}</span></div>
-      </div>`;
-
-    // auto-speak the plan
-    neoSpeak(`Today's bias is ${d.htf_bias}. ${d.one_sentence_plan}. Optimal entry: ${d.optimal_entry_window}.`);
-  }catch(err){
-    body.innerHTML=`<div style="color:var(--red);padding:20px;font-size:12px">Failed: ${escH(err.message)}</div>`;
-  }
-  btn.disabled=false; btn.textContent='Regenerate';
-}
-
-// ═══════════════════════════════════════════════════════
 //  TRADE REPLAY
 // ═══════════════════════════════════════════════════════
 let replayImageData = null;
@@ -2949,153 +2901,32 @@ RESPOND IN THIS JSON ONLY:
     container.innerHTML=`<div style="color:var(--red);font-size:12px">Failed: ${escH(err.message)}</div>`;
   }
   btn.disabled=false; btn.textContent='▶ Run replay';
+  trackCost('replay');
 }
 
-// ═══════════════════════════════════════════════════════
-//  SESSION DEBRIEF
-// ═══════════════════════════════════════════════════════
-async function openDebrief(){ openModal('debrief-modal'); }
 
-async function generateDebrief(){
-  const btn = document.getElementById('debrief-gen-btn');
-  btn.disabled=true; btn.textContent='Generating…';
-  const body = document.getElementById('debrief-body');
-  body.innerHTML = '<div style="display:flex;gap:5px;padding:20px"><span style="font-family:var(--mono);font-size:12px;color:var(--tx3)">Analysing today\'s session</span><div class="loading-bubble"><span></span><span></span><span></span></div></div>';
-
-  // gather today's trades
-  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-  const todayTrades = trades.filter(t=>t.ts>=todayStart.getTime());
-  const completedToday = todayTrades.filter(t=>t.outcome&&t.outcome!=='pending');
-  const wins = completedToday.filter(t=>t.outcome==='win');
-  const losses = completedToday.filter(t=>t.outcome==='loss');
-
-  const tradeSummary = todayTrades.map((t,i)=>
-    `Trade ${i+1}: ${(t.direction||'?').toUpperCase()} | Verdict: ${t.aiVerdict} | Outcome: ${t.outcome} | Setup: ${t.setup?.slice(0,60)} | Conf: ${t.confidencePct}% | Warnings: ${(t.warnings||[]).map(w=>w.text).join('; ')||'none'}`
-  ).join('\n') || 'No trades logged today.';
-
-  const learnCtx = buildLearningContext();
-
-  const sys = `${ICT_KB}
-
-You are an ICT 2022 NQ trading coach. Generate an end-of-session debrief. Be honest, specific, and constructive.
-
-RESPOND IN THIS JSON ONLY:
-{
-  "session_rating": <1-10>,
-  "session_summary": "<2-3 sentences summarising the session — what happened, quality of execution>",
-  "what_went_well": ["<specific thing 1>","<specific thing 2>"],
-  "what_went_wrong": ["<specific thing 1>","<specific thing 2>"],
-  "missed_opportunities": "<any high-probability setups the trader should have taken but didn't based on the data>",
-  "discipline_score": <1-10>,
-  "discipline_note": "<was the trader patient? Did they stick to kill zone? Revenge trade? Over-trade?>",
-  "pattern_spotted": "<any recurring pattern in today's trades — good or bad>",
-  "one_focus_tomorrow": "<the single most important thing to improve tomorrow>",
-  "homework": "<one specific thing to review or practise before tomorrow's session>"
-}`;
-
-  try{
-    const text = await neoFetch([{role:'user',content:`Today's trades:
-${tradeSummary}
-
-Historical context:
-${learnCtx}`}], sys, 1000, MODEL_DEEP);
-    const d = extractJSON(text);
-
-    const ratingCol = d.session_rating>=7?'var(--green)':d.session_rating>=5?'var(--amber)':'var(--red)';
-    const discCol   = d.discipline_score>=7?'var(--green)':d.discipline_score>=5?'var(--amber)':'var(--red)';
-
-    body.innerHTML = `
-      <div class="debrief-stat-row">
-        <div class="debrief-stat"><div class="debrief-stat-val" style="color:${ratingCol}">${d.session_rating}/10</div><div class="debrief-stat-lbl">Session rating</div></div>
-        <div class="debrief-stat"><div class="debrief-stat-val" style="color:${discCol}">${d.discipline_score}/10</div><div class="debrief-stat-lbl">Discipline</div></div>
-        <div class="debrief-stat"><div class="debrief-stat-val" style="color:${wins.length>losses.length?'var(--green)':'var(--red)'}">${wins.length}W / ${losses.length}L</div><div class="debrief-stat-lbl">Today's results</div></div>
-      </div>
-      <div style="padding:10px 12px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);font-size:13px;color:var(--tx2);margin-bottom:12px;line-height:1.6">${escH(d.session_summary)}</div>
-      <div class="brief-section">
-        <div class="brief-section-title">What went well</div>
-        ${(d.what_went_well||[]).map(w=>`<div class="icard-warn ok" style="margin-bottom:4px"><span>✅</span><span>${escH(w)}</span></div>`).join('')}
-      </div>
-      <div class="brief-section">
-        <div class="brief-section-title">What went wrong</div>
-        ${(d.what_went_wrong||[]).map(w=>`<div class="warn-item pattern" style="margin-bottom:4px"><span>❌</span><span class="warn-text">${escH(w)}</span></div>`).join('')}
-      </div>
-      <div class="brief-section">
-        <div class="brief-section-title">Discipline note</div>
-        <div style="font-size:12px;color:var(--tx2);line-height:1.6">${escH(d.discipline_note)}</div>
-      </div>
-      ${d.missed_opportunities?`<div class="brief-section"><div class="brief-section-title">Missed opportunities</div><div class="warn-item pd" style=""><span>💭</span><span class="warn-text">${escH(d.missed_opportunities)}</span></div></div>`:''}
-      ${d.pattern_spotted?`<div class="brief-section"><div class="brief-section-title">Pattern spotted</div><div class="warn-item learn" style=""><span>🧠</span><span class="warn-text">${escH(d.pattern_spotted)}</span></div></div>`:''}
-      <div style="margin-top:14px;padding:12px;background:var(--blue);border-radius:var(--r)">
-        <div style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.6);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">FOCUS FOR TOMORROW</div>
-        <div style="font-size:13px;color:#fff;font-weight:500">${escH(d.one_focus_tomorrow)}</div>
-        ${d.homework?`<div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:6px">📚 Homework: ${escH(d.homework)}</div>`:''}
-      </div>`;
-
-    // speak the summary
-    neoSpeak(`Session rating ${d.session_rating} out of 10. Tomorrow: ${d.one_focus_tomorrow}`);
-
-    // save to journal as a daily note
-    const debriefEntry = {
-      id:'debrief-'+Date.now(),ts:Date.now(),type:'debrief',
-      rating:d.session_rating,discipline:d.discipline_score,
-      summary:d.session_summary,focus:d.one_focus_tomorrow,
-      outcome:'debrief',direction:'n/a',setup:'Daily debrief',
-      aiVerdict:'info',confluences:[],warnings:[]
-    };
-    trades.unshift(debriefEntry); saveTrades(trades);
-  }catch(err){
-    body.innerHTML=`<div style="color:var(--red);padding:20px;font-size:12px">Failed: ${escH(err.message)}</div>`;
-  }
-  btn.disabled=false; btn.textContent='Regenerate';
-}
-
-// ── auto-open briefing at 9:25am EST ─────────────────────────────────────
-function checkAutoBriefing(){
-  const now = new Date();
-  const estMins = ((now.getUTCHours()*60+now.getUTCMinutes()-300)+1440)%1440;
-  if(estMins===9*60+25){
-    openModal('briefing-modal');
-    generateBriefing();
-  }
-}
-setInterval(checkAutoBriefing, 60000);
-
-// ── auto-open debrief at 11:35am EST ─────────────────────────────────────
-function checkAutoDebrief(){
-  const now = new Date();
-  const estMins = ((now.getUTCHours()*60+now.getUTCMinutes()-300)+1440)%1440;
-  if(estMins===11*60+35 && trades.filter(t=>{const d=new Date();d.setHours(0,0,0,0);return t.ts>=d.getTime()&&t.type!=='debrief'}).length>0){
-    openModal('debrief-modal');
-    generateDebrief();
-  }
-}
-setInterval(checkAutoDebrief, 60000);
 
 checkApiKey();
 setupSpeech();
+updateCostBadge();
 renderLearnPage();  // async — starts mic engine once
 applyHotkeys();
 initSupabase();
 </script>
 
-<!-- BRIEFING MODAL -->
-<div class="modal-overlay" id="briefing-modal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <span class="modal-title">📋 NEO · PRE-MARKET BRIEFING</span>
-      <button class="modal-close" onclick="closeModal('briefing-modal')">✕</button>
-    </div>
-    <div class="modal-body" id="briefing-body">
-      <div style="text-align:center;padding:30px;color:var(--tx3);font-size:12px">
-        <div style="font-size:24px;opacity:.3;margin-bottom:10px">📋</div>
-        Click Generate to build your pre-market game plan.
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="modal-btn primary" id="briefing-gen-btn" onclick="generateBriefing()">Generate briefing</button>
-      <button class="modal-btn secondary" onclick="closeModal('briefing-modal')">Close</button>
-      <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--tx3)" id="briefing-time"></span>
-    </div>
+
+<!-- COST MODAL -->
+<div id="cost-modal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.5)" onclick="if(event.target===this)closeCostModal()">
+  <div class="cost-modal">
+    <h3>💰 API USAGE — TODAY</h3>
+    <div class="cost-row"><span class="cost-label">F1/F2 analyses</span><span class="cost-val" id="ct-analyses">0</span></div>
+    <div class="cost-row"><span class="cost-label">Ask NEO</span><span class="cost-val" id="ct-asks">0</span></div>
+    <div class="cost-row"><span class="cost-label">Trade replay</span><span class="cost-val" id="ct-replays">0</span></div>
+    <div class="cost-row"><span class="cost-label">Learning uploads</span><span class="cost-val" id="ct-learns">0</span></div>
+    <div class="cost-total"><span>Estimated today</span><span id="ct-total">$0.00</span></div>
+    <div style="font-size:10px;color:var(--tx3);margin-top:8px;line-height:1.5">Estimates based on avg token usage.<br>Actual cost visible in Anthropic console.</div>
+    <button class="cost-reset" onclick="resetCosts()">Reset counter</button>
+    <button class="cost-reset" style="margin-top:6px" onclick="closeCostModal()">Close</button>
   </div>
 </div>
 
@@ -3141,26 +2972,6 @@ initSupabase();
     <div class="modal-footer">
       <button class="modal-btn primary" id="replay-gen-btn" onclick="generateReplay()">▶ Run replay</button>
       <button class="modal-btn secondary" onclick="closeModal('replay-modal')">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- DEBRIEF MODAL -->
-<div class="modal-overlay" id="debrief-modal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <span class="modal-title">📊 NEO · SESSION DEBRIEF</span>
-      <button class="modal-close" onclick="closeModal('debrief-modal')">✕</button>
-    </div>
-    <div class="modal-body" id="debrief-body">
-      <div style="text-align:center;padding:30px;color:var(--tx3);font-size:12px">
-        <div style="font-size:24px;opacity:.3;margin-bottom:10px">📊</div>
-        Generate a debrief of today's session and all logged trades.
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="modal-btn primary" id="debrief-gen-btn" onclick="generateDebrief()">Generate debrief</button>
-      <button class="modal-btn secondary" onclick="closeModal('debrief-modal')">Close</button>
     </div>
   </div>
 </div>
