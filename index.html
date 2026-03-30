@@ -943,7 +943,7 @@ async function analyseLearnEntry(entry){
     entry.concepts  = d.concepts||[];
     entry.note      = d.note||'Annotation read';
     saveLearnData(); refreshLearnCard(entry); updateLearnStats();
-    saveLearnEntryToCloud(entry);
+    if(hasCloud()) sbSaveEntry(entry);
   }catch(err){
     entry.note = 'Read error: '+err.message.slice(0,60);
     saveLearnData(); refreshLearnCard(entry);
@@ -954,7 +954,7 @@ async function analyseLearnEntry(entry){
 function deleteLearnEntry(id){
   learnData = learnData.filter(function(e){return e.id!==id;});
   saveLearnData();
-  deleteLearnEntryFromCloud(id);
+  
   var card = document.getElementById('lcard-'+id);
   if(card) card.remove();
   updateLearnStats();
