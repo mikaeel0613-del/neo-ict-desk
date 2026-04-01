@@ -528,6 +528,7 @@ button:focus{outline:none}
 .sb-cloud-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(22,199,132,.1);border:1px solid var(--gb);border-radius:20px;padding:3px 10px;font-family:var(--mono);font-size:9px;color:var(--green);margin-left:8px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -587,6 +588,7 @@ button:focus{outline:none}
     <div class="session-badge"><span class="sdot"></span>NEO · NY AM · 9:30–11:30</div>
     <button class="toolbar-btn" id="replay-btn" onclick="openReplay()">▶ Replay</button>
     <button class="risk-toggle-btn" onclick="toggleRiskBar()">⚖ Risk calc</button>
+    <button class="toolbar-btn" id="mute-btn" onclick="toggleMute()" title="Mute/unmute NEO voice">🔊</button>
     <span class="cost-badge" id="cost-badge" onclick="openCostModal()" title="API usage cost">$0.00</span>
     <button class="settings-btn" onclick="showSetup()" title="API key settings">⚙</button>
     <span style="font-family:var(--mono);font-size:9px;color:var(--tx3);padding:2px 6px;background:var(--s2);border:1px solid var(--b1);border-radius:4px;white-space:nowrap">LIVE: Sonnet · LEARN: Opus</span>
@@ -603,7 +605,7 @@ button:focus{outline:none}
       <div class="live-badge" id="live-badge">● LIVE CHART</div>
       <div class="screen-empty" id="screen-empty" onclick="startShare()">
         <svg width="44" height="44" viewBox="0 0 44 44" fill="none"><rect x="4" y="8" width="36" height="24" rx="3" stroke="currentColor" stroke-width="1.5"/><line x1="22" y1="32" x2="22" y2="38" stroke="currentColor" stroke-width="1.5"/><line x1="14" y1="38" x2="30" y2="38" stroke="currentColor" stroke-width="1.5"/><polyline points="11,26 16,19 20,22 27,14 33,17" stroke="#4d8bf5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <p>Click to share your<br><strong>TradingView window</strong><br><small style="color:var(--tx3);font-size:10px">auto-detects TradingView</small></p>
+        <p>Click to share your<br><strong>TradingView window</strong><br><small style="color:var(--tx3);font-size:10px">Share once — stays active all session</small></p>
         <span>opens screen picker</span>
       </div>
     </div>
@@ -716,6 +718,92 @@ button:focus{outline:none}
 
 
 <script>
+
+
+// ═══════════════════════════════════════════════════════
+//  TRADINGVIEW EMBEDDED CHART
+// ═══════════════════════════════════════════════════════
+var tvWidget = null;
+
+function loadTVChart(){
+  var symbol   = (document.getElementById('tv-symbol')   || {value:'CME_MINI:NQ1!'}).value;
+  var interval = (document.getElementById('tv-interval') || {value:'1'}).value;
+  var container = document.getElementById('tradingview_chart');
+  if(!container) return;
+  container.innerHTML = '';
+
+  // TradingView lightweight widget — no API key needed
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.async = true;
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  script.innerHTML = '';
+
+  var config = {
+    autosize: true,
+    symbol: symbol,
+    interval: interval,
+    timezone: 'America/New_York',
+    theme: 'dark',
+    style: '1',
+    locale: 'en',
+    enable_publishing: false,
+    hide_top_toolbar: false,
+    hide_legend: false,
+    save_image: false,
+    calendar: false,
+    hide_volume: false,
+    withdateranges: true,
+    studies: ['Volume@tv-basicstudies'],
+    support_host: 'https://www.tradingview.com'
+  };
+
+  var widgetDiv = document.createElement('div');
+  widgetDiv.className = 'tradingview-widget-container';
+  widgetDiv.style.cssText = 'height:100%;width:100%';
+
+  var innerDiv = document.createElement('div');
+  innerDiv.className = 'tradingview-widget-container__widget';
+  innerDiv.style.cssText = 'height:calc(100% - 32px);width:100%';
+
+  var scriptEl = document.createElement('script');
+  scriptEl.type = 'text/javascript';
+  scriptEl.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  scriptEl.async = true;
+  scriptEl.textContent = JSON.stringify(config);
+
+  widgetDiv.appendChild(innerDiv);
+  widgetDiv.appendChild(scriptEl);
+  container.appendChild(widgetDiv);
+}
+
+// Capture the TradingView chart using html2canvas
+async function captureTV(){
+  var wrap = document.getElementById('tv-widget-wrap');
+  if(!wrap){
+    setHkStatus('Chart not found', 'error');
+    return null;
+  }
+  try{
+    setHkStatus('Capturing chart…', 'thinking');
+    var canvas = await html2canvas(wrap, {
+      useCORS: true,
+      allowTaint: true,
+      scale: 1,
+      logging: false,
+      backgroundColor: '#0a0e14'
+    });
+    return canvas.toDataURL('image/jpeg', 0.85);
+  }catch(e){
+    console.warn('[NEO] html2canvas failed:', e.message);
+    return null;
+  }
+}
+
+// Load chart on startup
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(loadTVChart, 500);
+});
 
 // ═══════════════════════════════════════════════════════
 //  COST TRACKER
@@ -1120,325 +1208,98 @@ const MODEL_LIVE = 'claude-sonnet-4-5-20250929'; // Sonnet — deep chart analys
 const MODEL_FAST = 'claude-haiku-4-5-20251001';  // Haiku — fast for ask box + learn annotations
 const MODEL_DEEP = 'claude-opus-4-20250514';   // Opus 4 — deep reasoning   // learning, briefing, debrief
 
-const ICT_KB = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ICT 2022 MODEL — COMPLETE KNOWLEDGE BASE
+// ═══════════════════════════════════════════════════════
+//  NEO KNOWLEDGE BASE — PERSONAL TRADING STRATEGY
+// ═══════════════════════════════════════════════════════
+const ICT_KB = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NEO — TRADING STRATEGY RULES (STRICT)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-═══ CORE PHILOSOPHY ═══
-Smart money (banks/institutions) cannot fill orders at a single price — they need liquidity.
-Price is engineered to reach liquidity pools, fill institutional orders, then reverse.
-Retail traders are the liquidity. Their stop losses are the fuel for institutional entries.
-Every candle, every move has a purpose: to either reach liquidity or deliver price to a PD array.
+You are NEO. You analyse MNQ/MES 1-minute charts against ONE specific strategy.
+Do NOT apply generic ICT theory. Only evaluate against these exact rules.
+If the setup does not meet ALL required steps — verdict is SKIP IT.
 
-═══ TIME — THE MOST IMPORTANT VARIABLE ═══
-ICT trades are TIME-based first, then price. Setups only qualify during specific kill zones.
+═══ THE STRATEGY — 6 STEPS ═══
 
-KILL ZONES (all times EST):
-• Asian Session: 8:00 PM – 12:00 AM — range building, liquidity engineering
-• London Open Kill Zone: 2:00 AM – 5:00 AM — highest probability reversals
-• NY AM Kill Zone: 8:30 AM – 11:00 AM — PRIMARY session, best NQ setups
-• NY Lunch: 12:00 PM – 1:00 PM — avoid, choppy, low probability
-• NY PM Kill Zone: 1:30 PM – 4:00 PM — secondary, lower probability than AM
+STEP 1 — 15 MINUTE TRIGGER (REQUIRED)
+On the 15M chart, ONE of the following must have occurred:
+• MNQ OR MES swept a prior 15M swing low (for longs) or swing high (for shorts)
+• MNQ OR MES swept equal lows (for longs) or equal highs (for shorts)
+• MNQ OR MES traded INTO a 15M FVG (bullish FVG for longs, bearish FVG for shorts)
+This is the foundation. Without Step 1 — SKIP IT.
 
-NY AM KILL ZONE (primary focus for this bot):
-• 9:30 open is the single most important moment of the day
-• First 30 minutes often create a manipulation move (the fake)
-• True directional move begins after the manipulation leg is complete
-• ICT: "The market will seek liquidity before it seeks to deliver price"
-• Watch for sweep of Asian range highs or lows in the first 15-30 mins of NY AM
+STEP 2 — SMT DIVERGENCE (OPTIONAL — adds confluence)
+After Step 1, check if one instrument swept the low/high while the other did not.
+• Bullish SMT: MNQ makes lower low, MES does not (or vice versa) = added confluence
+• Bearish SMT: MNQ makes higher high, MES does not (or vice versa) = added confluence
+This is NOT required but increases probability when present.
 
-POWER OF 3 (AMD Model — Accumulation, Manipulation, Distribution):
-• Accumulation: Smart money builds position quietly (Asian session / pre-market)
-• Manipulation: Price spikes AGAINST the true direction to grab liquidity (stop hunt)
-• Distribution: Price delivers in the true direction after manipulation complete
-• On M1 during NY AM: AMD can play out in as little as 15-30 minutes
-• Never trade the Accumulation or Manipulation legs — only the Distribution
+STEP 3 — 1M MARKET STRUCTURE SHIFT (REQUIRED)
+On the 1M chart, price must break above a previous swing high (for longs)
+or break below a previous swing low (for shorts).
+• A swing high = a candle with lower highs on both sides (at least 1 candle each side)
+• A swing low = a candle with higher lows on both sides
+• The break must be a CANDLE CLOSE above/below — not just a wick
+If price only wicks through and closes back — NOT a valid MSS. SKIP IT.
 
-OPTIMAL TIME FOR M1 ENTRIES:
-• 9:30-9:50 AM: Manipulation sweep of overnight range / Asian high or low
-• 9:50-10:30 AM: Distribution leg begins — highest probability M1 entries
-• 10:30-11:00 AM: Extension to next PD array, possible partials zone
+STEP 4 — DISPLACEMENT (REQUIRED)
+The candle that creates the MSS must show displacement:
+• Strong impulsive body — significantly larger than recent average candles
+• A clear, decisive close beyond the swing high/low
+• Often leaves a Fair Value Gap behind (gap between this candle and 2 bars ago)
+A weak, small candle drifting through the level = NO displacement. SKIP IT.
 
-═══ MARKET STRUCTURE ═══
-SWING HIGH/LOW CLASSIFICATION:
-• Swing High: candle with lower highs on both sides (3-bar minimum)
-• Swing Low: candle with higher lows on both sides
-• Internal swing: smaller structure within a larger range
-• External swing: the major swing points that define the dealing range
+STEP 5 — MES 1M CONFIRMATION (REQUIRED)
+MES must have also created its own MSS on the 1M chart within the last 3 bars.
+• If MES has NOT broken its own swing high/low with displacement within 3 bars — SKIP IT.
+• If MES MSS happened more than 3 bars ago — SKIP IT.
+• Both instruments must confirm structure shift in the same direction.
 
-BREAK OF STRUCTURE (BOS):
-• Price closes beyond a prior swing high (bullish BOS) or swing low (bearish BOS)
-• BOS = continuation signal, same direction as prior move
-• Only valid when it occurs after a pullback to a PD array
-• False BOS = engineered liquidity grab, often signals reversal
+STEP 6 — TARGET (TAKE PROFIT)
+Target is the opposing 15M level:
+• For longs: opposing 15M swing high OR unmitigated bearish 15M FVG above
+• For shorts: opposing 15M swing low OR unmitigated bullish 15M FVG below
+If there is an UNMITIGATED OPPOSING FVG between entry and target — this reduces
+probability significantly. Flag it as a warning.
 
-CHANGE OF CHARACTER (CHoCH) / MARKET STRUCTURE SHIFT (MSS):
-• CHoCH: first sign of a potential reversal — closes beyond the most recent internal swing
-• MSS: confirmed when price closes beyond a significant external swing in the opposite direction
-• CHoCH on M1 during NY AM = entry trigger for distribution leg
-• MSS after liquidity sweep = highest probability entry signal in the 2022 model
-• Sequence for long: price sweeps sellside liquidity → CHoCH to the upside → entry on retracement to OB/FVG
+═══ STOP LOSS ═══
+Stop loss = below the low of the first candle that created the MSS (for longs)
+Stop loss = above the high of the first candle that created the MSS (for shorts)
 
-DEALING RANGE:
-• Defined by the most recent swing high and swing low
-• Premium zone: upper 50% of range — ideal for shorts
-• Equilibrium (EQ): 50% of range (0.50 Fibonacci)
-• Discount zone: lower 50% of range — ideal for longs
-• Rule: only buy in discount, only sell in premium (relative to HTF dealing range)
-• M1 application: identify the NY AM dealing range from the first 15 min, trade from extremes
+═══ HARD SKIP RULES — ALWAYS SKIP IF ANY OF THESE ARE TRUE ═══
+• No candle close past the swing high/low (wick only) — SKIP IT
+• No displacement on the MSS candle — SKIP IT
+• MES has not had its own MSS within 3 bars — SKIP IT
+• Step 1 has not been met on the 15M chart — SKIP IT
+• An unmitigated opposing FVG sits between entry and target — flag as high risk
+• Poor MSS = small body, no conviction, gradual drift through level — SKIP IT
 
-═══ PD ARRAYS (Premium/Discount Arrays) — IN ORDER OF STRENGTH ═══
-PD arrays are the specific price levels where smart money places orders.
-Listed strongest to weakest:
+═══ WHAT MAKES AN A+ SETUP ═══
+• Step 1: Clear 15M liquidity sweep (not just touching — actually swept through)
+• Step 2: SMT divergence present
+• Step 3: Clean MSS with strong candle close
+• Step 4: Obvious displacement — large body, gap left behind
+• Step 5: MES confirmed within 1-2 bars (not 3)
+• Step 6: Clear target with no opposing FVGs in the way
+• All 5 required steps met + SMT = maximum confidence
 
-BULLISH PD ARRAYS (buy from these when in discount):
-1. Breaker Block — former bearish OB that price broke through, now acts as support
-2. Bullish Order Block (OB) — last down-close candle before a bullish impulse
-3. Bullish Mitigation Block — area where failed swing low was created
-4. Bullish Fair Value Gap (FVG / IFVG) — three-candle imbalance, gap between candle[0] high and candle[2] low
-5. Bullish Void — single large up candle with no overlap
-6. Strong High — a high that caused significant displacement
+═══ HOW TO EVALUATE WHAT YOU SEE ═══
+When analysing the 1M chart:
+1. First ask: has a 15M trigger happened? (sweep or FVG entry)
+2. Then ask: is there a clean MSS with a close AND displacement?
+3. Then ask: has MES also shifted structure within 3 bars?
+4. Then ask: where is the target and is the path clear?
+5. Give verdict based on how many steps are clearly visible
 
-BEARISH PD ARRAYS (sell from these when in premium):
-1. Breaker Block — former bullish OB that price broke through, now acts as resistance
-2. Bearish Order Block (OB) — last up-close candle before a bearish impulse
-3. Bearish Mitigation Block — area where failed swing high was created
-4. Bearish Fair Value Gap (FVG) — three-candle imbalance, gap between candle[0] low and candle[2] high
-5. Bearish Void — single large down candle with no overlap
-6. Strong Low — a low that caused significant displacement
-
-═══ ORDER BLOCKS (OB) — DETAILED ═══
-BULLISH ORDER BLOCK:
-• The last red (bearish) candle in a down move BEFORE a strong bullish displacement
-• Must be followed by at least 3 bullish candles or a strong impulse away
-• Best OBs: in discount zone, after a liquidity sweep, on M1/M5 aligned with HTF
-• Entry: price retraces INTO the OB (ideally the upper 25% — the "breaker" portion)
-• Invalidation: price closes below the OB low
-• On M1: OBs from the 5-15 min range before NY open are extremely powerful
-
-BEARISH ORDER BLOCK:
-• The last green (bullish) candle in an up move BEFORE a strong bearish displacement
-• Must be followed by at least 3 bearish candles or a strong impulse away
-• Best OBs: in premium zone, after a liquidity sweep, after CHoCH
-• Entry: price retraces INTO the OB (ideally lower 25%)
-• Invalidation: price closes above the OB high
-
-OB REFINEMENT (ICT 2022):
-• Use the 50% level of the OB as the "consequent encroachment" — key reaction point
-• OB + FVG overlap = "OB sandwich" — extremely high probability
-• Old OBs (multiple touches) lose strength — prefer virgin OBs (untouched)
-• M1 OBs are valid during kill zones only — same OB outside kill zone = lower probability
-
-═══ FAIR VALUE GAPS (FVG) ═══
-DEFINITION: Three consecutive candles where candle[1]'s body creates a gap between candle[0]'s high and candle[2]'s low (bullish) or candle[0]'s low and candle[2]'s high (bearish).
-
-BULLISH FVG: candle[0] high < candle[2] low — imbalance, price wants to fill it
-BEARISH FVG: candle[0] low > candle[2] high — imbalance, price wants to fill it
-
-FVG TYPES:
-• SIBI (Sellside Imbalance Buyside Inefficiency) — bullish FVG created during up move
-• BISI (Buyside Imbalance Sellside Inefficiency) — bearish FVG created during down move
-
-FVG KEY RULES:
-• Consequent Encroachment (CE): the 50% level of the FVG — strongest reaction point
-• First touch of FVG is highest probability — each subsequent touch weakens it
-• FVG above current price = draw on liquidity for longs (target)
-• FVG below current price = draw on liquidity for shorts (target)
-• Overlapping FVGs (stacked) = very strong level
-• FVG that overlaps an OB = extremely high confluence entry zone
-
-ICT 2022 FVG RULE: Price will always return to fill at least 50% of every FVG eventually.
-Use unfilled FVGs above/below as targets. Never fight price when it is filling a FVG.
-
-═══ LIQUIDITY — THE ENGINE OF PRICE ═══
-LIQUIDITY POOLS (where stops cluster):
-• Equal highs (EQH): two or more highs at similar levels — BSL (Buyside Liquidity)
-• Equal lows (EQL): two or more lows at similar levels — SSL (Sellside Liquidity)
-• Previous day high (PDH) — major BSL
-• Previous day low (PDL) — major SSL
-• Previous week high/low — HTF liquidity
-• Asian session high/low — primary NY AM liquidity targets
-• Swing highs/lows — obvious stop clusters
-• Round numbers (18000, 18500 on NQ) — psychological stops
-
-LIQUIDITY SWEEP MECHANICS:
-• BSL sweep: wick above equal highs / prior swing high, then closes back below — bearish signal
-• SSL sweep: wick below equal lows / prior swing low, then closes back above — bullish signal
-• Sweep must be followed by CHoCH to confirm reversal — sweep alone is not an entry
-• "Turtle Soup": classic retail setup fade — price sweeps obvious liquidity then reverses hard
-• M1 application: watch for sweep of Asian low in first 15 mins of NY AM → long setup
-
-STOP HUNT CHARACTERISTICS:
-• Usually occurs as a single aggressive wick candle (1-3 bars on M1)
-• Volume spike on the sweep candle
-• Immediate close back through the liquidity level
-• Sets up the highest probability ICT entries
-
-═══ IPDA — INTERBANK PRICE DELIVERY ALGORITHM ═══
-Price is algorithmic. It seeks specific levels in specific sequences.
-
-IPDA LOOK BACK:
-• 20-candle look back: short-term IPDA range
-• 40-candle look back: medium-term IPDA range
-• 60-candle look back: long-term IPDA range
-• Price will draw to the opposing array within the look-back range
-
-IPDA DATA RANGES (on daily chart for bias):
-• Current week's high/low
-• Prior week's high/low
-• Current month's high/low
-• Prior month's high/low
-These levels act as magnets. Price will seek the opposing side after taking one side.
-
-DRAW ON LIQUIDITY:
-• Always ask: where is price GOING, not just where it is
-• Draw = the next significant PD array or liquidity pool price is engineered toward
-• Long trade draw examples: bearish FVG above, prior swing high BSL, PDH
-• Short trade draw examples: bullish FVG below, prior swing low SSL, PDL
-• Never take a trade without knowing your draw — it IS your take profit
-
-═══ OPTIMAL TRADE ENTRY (OTE) ═══
-ICT's highest-probability entry model within a PD array:
-
-FIBONACCI LEVELS FOR OTE:
-• 0.62 (62%) retracement — entry zone begin
-• 0.705 (70.5%) — sweet spot, "the ICT OTE"
-• 0.79 (79%) — entry zone end
-• 1.0 = start of impulse, 0.0 = end of impulse (measure the swing)
-
-OTE SEQUENCE (long example):
-1. Identify HTF bullish bias (price in discount on HTF dealing range)
-2. Price sweeps SSL (sellside liquidity pool)
-3. CHoCH to upside on M1 confirms reversal
-4. Wait for retracement to 62-79% of the initial up-move
-5. Entry at OTE zone, stop below the sweep low
-6. Target: FVG above, prior BSL, or next PD array
-
-OTE RULE: The OTE only works when the larger bias is aligned. Trading OTE counter-trend = low probability.
-
-═══ STANDARD DEVIATION TARGETS ═══
-After a liquidity sweep and reversal, use standard deviations from the sweep to project targets:
-• -1 SD / +1 SD: 1.0 extension from sweep — first target
-• -2 SD / +2 SD: 2.0 extension — optimal full TP
-• -2.5 SD / +2.5 SD: 2.5 extension — extended target if momentum strong
-On NQ M1: 1 SD in NY AM often = 20-50 NQ points depending on volatility
-
-═══ ENTRY MODELS FOR NQ M1 NY AM ═══
-
-MODEL 1 — THE CLASSIC NY AM SWEEP & REVERSE:
-1. Pre-market: identify Asian range high and low
-2. 9:30-9:45: wait for price to sweep Asian low (for long) or Asian high (for short)
-3. Look for M1 CHoCH after the sweep
-4. Enter on retracement to the M1 OB or FVG created by the CHoCH impulse
-5. Stop: below the sweep low (for long) — 2-5 NQ points buffer
-6. Target: Asian range opposite side, then FVG above, then PDH
-
-MODEL 2 — THE OB RETRACEMENT:
-1. Strong displacement move creates M1 OB
-2. CHoCH confirmed
-3. Price retraces to OB (ideally with FVG overlap)
-4. Enter as price touches upper 25% of OB (long) or lower 25% (short)
-5. CE of OB = highest probability reaction candle
-6. Stop: 1-2 points below OB low (long)
-7. Target: next FVG or liquidity above
-
-MODEL 3 — THE FVG FILL ENTRY:
-1. Strong impulse creates a FVG (3-candle imbalance)
-2. Price retraces back INTO the FVG
-3. Enter at CE (50%) of FVG
-4. Stop: below FVG low (long)
-5. Target: the liquidity or PD array that caused the initial impulse
-
-MODEL 4 — THE BREAKER BLOCK:
-1. Identify prior OB that price has already broken through with displacement
-2. That broken OB becomes a Breaker Block
-3. Price returns to test the Breaker Block
-4. Enter as price wicks into the breaker zone
-5. Strongest version: Breaker + FVG + OTE alignment
-
-═══ STOP LOSS PLACEMENT ═══
-WRONG: below/above the entry candle wick
-WRONG: arbitrary points below entry
-CORRECT ICT SL PLACEMENT (long):
-• Below the OB low (not the wick — the candle body low)
-• Below the FVG low
-• Below the liquidity sweep low (the wick that swept SSL)
-• Below the nearest swing low that would invalidate the thesis
-CORRECT ICT SL PLACEMENT (short):
-• Above the OB high
-• Above the FVG high
-• Above the BSL sweep wick high
-ON NQ M1: typical SL = 8-20 NQ points from entry depending on OB size
-
-STOP LOSS MANAGEMENT (TRAILING):
-• Move SL to break-even after price fills the FVG target / reaches 1:1 R:R
-• Trail behind each new OB that forms in the direction of the trade
-• Trail behind each new swing low (long) or swing high (short) after CHoCH confirms continuation
-• Never trail SL into noise — only move to a new structural level
-• Partial exit at 1:1, trail remainder behind next M1 OB
-
-═══ TAKE PROFIT / PARTIAL EXIT STRATEGY ═══
-PARTIAL EXITS (ICT approach):
-• 25-50% at the FVG CE or first PD array (1:1 to 1.5:1 R:R)
-• Move SL to breakeven after first partial
-• Hold remainder to the full draw on liquidity (2:1 to 4:1 R:R)
-
-TP TARGETS IN ORDER:
-1. CE of nearest opposing FVG
-2. Top/bottom of nearest opposing OB
-3. Prior swing high/low (BSL/SSL pool)
-4. Standard deviation extensions (1SD, 2SD)
-5. Previous day high/low
-
-COMMON M1 NQ MISTAKE: closing the full position at the first FVG when there is a clear BSL pool 30-50 points higher — this is the most common "left money on table" scenario.
-
-═══ HIGHER TIMEFRAME BIAS ═══
-NEVER trade M1 without checking HTF first:
-• Daily: is price in premium or discount? Above or below equilibrium?
-• 4H: what is the 4H draw on liquidity?
-• 1H: what is the 1H market structure direction?
-• 15M: what is the most recent 15M CHoCH?
-• M1: entry precision only — direction MUST align with 15M minimum
-
-HTF BIAS ALIGNMENT CHECK:
-• Daily bullish + 4H bullish + 1H bullish + 15M bullish + M1 long = maximum confluence
-• Any misalignment reduces probability
-• Trading M1 against 1H structure = low probability, even with perfect M1 setup
-
-═══ WHAT INVALIDATES A SETUP ═══
-• Close BELOW the OB low (for a long trade)
-• MSS against the trade direction on M5 or higher
-• Price spending more than 3-4 M1 candles inside the OB without bouncing
-• Opposing PD array within 1:1 risk distance (trapped between arrays)
-• High-impact news event during the setup (NFP, FOMC, CPI)
-• Time: setup attempted outside NY AM kill zone without strong HTF alignment
-• Second touch of an OB — lower probability than first touch
-
-═══ NQ-SPECIFIC NOTES ═══
-• NQ (Nasdaq) is the most algorithm-driven index — ICT models work extremely well
-• NQ spreads during NY AM: 0.25 points (1 tick)
-• Average NY AM range: 80-150 NQ points
-• High-volatility days (CPI, FOMC): range can exceed 300 points — widen SL
-• NQ respects M1 OBs and FVGs more consistently than ES during NY AM
-• Round numbers (18000, 18500, 19000) act as major liquidity magnets on NQ
-• VWAP acts as an institutional reference — price often tests VWAP before NY AM continuation
-• Pre-market high/low = major levels — treat as SSL/BSL for NY AM
-
-═══ RED FLAGS — DO NOT TRADE ═══
-• NFP Friday first 30 minutes
-• FOMC decision day during announcement
-• CPI / PPI release during NY AM
-• Low liquidity days (day before/after major holidays)
-• When price is inside a consolidation with no clear swing structure
-• When HTF shows price at a major PD array opposing your direction
-• When the manipulation leg has NOT occurred yet (do not anticipate — wait)
+═══ CONFIDENCE SCORING ═══
+• All 5 required steps clearly visible + SMT = 85-95%
+• All 5 required steps clearly visible, no SMT = 65-80%
+• Missing MES confirmation or weak displacement = 30-45%
+• Missing Step 1 (no 15M trigger) = SKIP IT regardless
+• Wick-only MSS or no displacement = SKIP IT regardless
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-
-The trader shares their TradingView screen. Read the chart carefully — identify candles, market structure, OBs, FVGs, liquidity levels, PD arrays, AMD phase, kill zone timing, dealing range position, and draw on liquidity. Cross-reference everything you see against the ICT 2022 model above. Combine visual analysis with their spoken description.
-
-\${learnCtx}`;
-
+`
 
 function getApiKey(){ return localStorage.getItem(API_KEY_STORE) || ''; }
 
@@ -1710,8 +1571,9 @@ async function triggerAnalysis(direction){
 
   const sys = ICT_KB + `
 
-You are NEO, an elite ICT 2022 NQ futures analyst, 1-minute chart specialist.
-IMPORTANT: Do NOT skip or penalise setups based on time of day — judge purely on ICT confluence quality.
+You are NEO, a specialist analyst for ONE specific trading strategy on MNQ/MES.
+You evaluate ONLY against the 6-step strategy rules above. Do not apply any other ICT theory.
+Be direct and decisive. If steps are not clearly visible on the chart — SKIP IT.
 The trader pressed the ${dirEmoji} ${dirLabel} hotkey — they are about to enter a ${dirLabel} trade.
 Look for ${direction==='long'?'bullish':'bearish'} ICT confluences. Flag any ${oppDir} opposing arrays.
 
@@ -2525,7 +2387,17 @@ function naturalise(text){
     .replace(/\s+/g, ' ').trim();
 }
 
+var NEO_MUTED = false;
+
+function toggleMute(){
+  NEO_MUTED = !NEO_MUTED;
+  var btn = document.getElementById('mute-btn');
+  btn.textContent = NEO_MUTED ? '🔇' : '🔊';
+  if(NEO_MUTED) window.speechSynthesis.cancel();
+}
+
 function neoSpeak(text){
+  if(NEO_MUTED) return;
   if(!text || !window.speechSynthesis) return;
   try{
     const clean = naturalise(text);
