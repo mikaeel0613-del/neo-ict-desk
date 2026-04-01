@@ -1076,7 +1076,7 @@ async function handleLearnUpload(event){
 
 async function analyseLearnEntry(entry){
   if(!getApiKey()) return;
-  var sys = 'You are an expert ICT 2022 NQ futures analyst reviewing an annotated trade screenshot. Read every label, arrow, and marking on the chart carefully. Extract: direction (long/short/unknown), outcome (win/loss/unknown), all ICT concepts marked (MSS, CHoCH, FVG, OB, liquidity sweep, SSL, BSL, SMT, BISI, SIBI, OTE, PD array, entry, etc). Write a concise note explaining what the setup shows from an ICT perspective. Return ONLY this JSON: {"direction":"long","outcome":"win","concepts":["MSS","FVG","Liquidity Sweep"],"note":"one sentence ICT analysis of the annotated setup"}';
+  var sys = 'You are reviewing an annotated MNQ/MES trade screenshot. The annotation will contain text such as "long entry" or "short entry" and a description of the trade. Read ALL text, labels, arrows and markings carefully. Extract exactly: direction (long/short/unknown based on the text "long entry" or "short entry"), outcome (win/loss/unknown), the key concepts marked (MSS, FVG, liquidity sweep, SMT, IFVG, displacement, etc), and a concise note summarising what the annotation says about the trade. Return ONLY this JSON with no other text: {"direction":"long","outcome":"win","concepts":["MSS","Liquidity Sweep"],"note":"one sentence summary of what the annotation describes"}';
   try{
     var resp = await neoFetch([{role:'user',content:[
       {type:'image',source:{type:'base64',media_type:(entry.b64.match(/data:([^;]+)/)||['','image/jpeg'])[1],data:entry.b64.split(',')[1]}},
